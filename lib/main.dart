@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-//import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 
 import 'backdrop.dart';
@@ -10,9 +9,9 @@ void main() => runApp(new MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: 'Flutter Demo',
-      theme: new ThemeData(
+      theme: ThemeData(
         primarySwatch: Colors.orange,
         brightness: Brightness.dark,
         accentColor: Colors.orangeAccent[400]
@@ -27,7 +26,7 @@ class MyApp extends StatelessWidget {
           fab: FloatingActionButton(
             onPressed: () {},
             tooltip: 'GO',
-            child: new Icon(Icons.smoking_rooms),
+            child: Icon(Icons.smoking_rooms),
           ),
         ),
       ),
@@ -46,7 +45,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final Location location = Location();
-  //GoogleMapController mapController;
   String _currentCode = "";
 
   @override
@@ -56,23 +54,14 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _currentCode = encode(update["latitude"], update["longitude"], codeLength: 8);
       });
-      /*mapController?.moveCamera(CameraUpdate.newLatLng(
-          LatLng(update["latitude"], update["longitude"])));*/
     });
   }
-
-  /*void _onMapCreated(GoogleMapController controller) {
-    setState(() => mapController = controller);
-  }*/
 
   @override
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.center,
       child: Text(_currentCode),
-      /*child: GoogleMap(
-        onMapCreated: _onMapCreated,
-      ),*/
     );
   }
 }
