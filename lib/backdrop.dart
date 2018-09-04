@@ -31,8 +31,11 @@ class _CustomShape extends ShapeBorder {
   final double notchMargin;
   final double fabRadius;
 
-  const _CustomShape(
-      {this.cornerRadius: 28.0, this.notchMargin: 4.0, this.fabRadius: 28.0});
+  const _CustomShape({
+    this.cornerRadius: 28.0,
+    this.notchMargin: 4.0,
+    this.fabRadius: 28.0,
+  });
 
   @override
   EdgeInsetsGeometry get dimensions => EdgeInsets.all(0.0);
@@ -80,11 +83,17 @@ class _CustomShape extends ShapeBorder {
     return Path()
       ..moveTo(rect.left, rect.top)
       ..lineTo(rect.left, rect.bottom - cornerRadius)
-      ..relativeArcToPoint(Offset(cornerRadius, cornerRadius),
-          radius: Radius.circular(cornerRadius), clockwise: false)
+      ..relativeArcToPoint(
+        Offset(cornerRadius, cornerRadius),
+        radius: Radius.circular(cornerRadius),
+        clockwise: false,
+      )
       ..lineTo(rect.right - cornerRadius, rect.bottom)
-      ..relativeArcToPoint(Offset(cornerRadius, -cornerRadius),
-          radius: Radius.circular(cornerRadius), clockwise: false)
+      ..relativeArcToPoint(
+        Offset(cornerRadius, -cornerRadius),
+        radius: Radius.circular(cornerRadius),
+        clockwise: false,
+      )
       ..lineTo(rect.right, rect.top)
       ..close();
   }
@@ -98,8 +107,11 @@ class _CustomShape extends ShapeBorder {
     return Path()
       ..moveTo(rect.left, rect.top)
       ..lineTo(rect.left, rect.bottom - cornerRadius)
-      ..relativeArcToPoint(Offset(cornerRadius, cornerRadius),
-          radius: Radius.circular(cornerRadius), clockwise: false)
+      ..relativeArcToPoint(
+        Offset(cornerRadius, cornerRadius),
+        radius: Radius.circular(cornerRadius),
+        clockwise: false,
+      )
       ..lineTo(p[0].dx, p[0].dy)
       ..quadraticBezierTo(p[1].dx, p[1].dy, p[2].dx, p[2].dy)
       ..arcToPoint(
@@ -109,8 +121,11 @@ class _CustomShape extends ShapeBorder {
       )
       ..quadraticBezierTo(p[4].dx, p[4].dy, p[5].dx, p[5].dy)
       ..lineTo(rect.right - cornerRadius, rect.bottom)
-      ..relativeArcToPoint(Offset(cornerRadius, -cornerRadius),
-          radius: Radius.circular(cornerRadius), clockwise: false)
+      ..relativeArcToPoint(
+        Offset(cornerRadius, -cornerRadius),
+        radius: Radius.circular(cornerRadius),
+        clockwise: false,
+      )
       ..lineTo(rect.right, rect.top)
       ..close();
   }
@@ -121,9 +136,10 @@ class _CustomShape extends ShapeBorder {
   @override
   ShapeBorder scale(double t) {
     return _CustomShape(
-        cornerRadius: cornerRadius * t,
-        notchMargin: notchMargin * t,
-        fabRadius: fabRadius * t);
+      cornerRadius: cornerRadius * t,
+      notchMargin: notchMargin * t,
+      fabRadius: fabRadius * t,
+    );
   }
 }
 

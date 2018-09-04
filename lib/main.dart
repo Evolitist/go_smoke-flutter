@@ -49,16 +49,21 @@ class _AppState extends State<App> {
         ),
         settingsClick: () {
           Navigator.push(
-              context,
-              PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => SettingsPage(_setDark),
-                  transitionsBuilder: (_, anim, __, child) => SlideTransition(
-                      position: Tween<Offset>(
-                        begin: Offset(0.0, 1.0),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                          parent: anim, curve: Curves.fastOutSlowIn)),
-                      child: child)));
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => SettingsPage(_setDark),
+              transitionsBuilder: (_, anim, __, child) => SlideTransition(
+                    position: Tween<Offset>(
+                      begin: Offset(0.0, 1.0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: anim,
+                      curve: Curves.fastOutSlowIn,
+                    )),
+                    child: child,
+                  ),
+            ),
+          );
         },
       ),
     );
