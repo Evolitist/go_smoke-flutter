@@ -12,11 +12,13 @@ class Backdrop extends StatefulWidget {
   final Widget frontLayer;
   final Widget backLayer;
   final Widget fab;
+  final VoidCallback settingsClick;
 
   const Backdrop({
     @required this.frontLayer,
     @required this.backLayer,
     this.fab,
+    this.settingsClick,
   })  : assert(frontLayer != null),
         assert(backLayer != null);
 
@@ -317,7 +319,7 @@ class _BackdropState extends State<Backdrop>
               Container(height: _size),
               IconButton(
                 icon: Icon(Icons.settings),
-                onPressed: () {},
+                onPressed: widget.settingsClick,
               ),
             ],
           ),

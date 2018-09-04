@@ -1,35 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backdrop.dart';
 import 'olc.dart';
 
-void main() => runApp(new MyApp());
+void main() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  Brightness brightness =
+      (prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
+  runApp(new App(prefs, brightness));
+}
 
-class MyApp extends StatelessWidget {
+class App extends StatefulWidget {
+  App(this.prefs, this._brightness);
+
+  final SharedPreferences prefs;
+  final Brightness _brightness;
+
+  @override
+  _AppState createState() => _AppState(_brightness);
+}
+
+class _AppState extends State<App> {
+  _AppState(this.brightness);
+
+  Brightness brightness;
+
+  void _setDark(bool value) async {
+    setState(() {
+      brightness = value ? Brightness.dark : Brightness.light;
+    });
+    await widget.prefs.setBool("isDark", value);
+  }
+
+  Widget _buildScreen(BuildContext context, BoxConstraints constraints) {
+    return Material(
+      elevation: 0.0,
+      child: Backdrop(
+        frontLayer: MyHomePage(),
+        backLayer: Container(
+          height: 100.0,
+        ),
+        fab: FloatingActionButton(
+          onPressed: () {},
+          tooltip: 'GO',
+          child: Icon(Icons.smoking_rooms),
+        ),
+        settingsClick: () {
+          Navigator.push(
+              context,
+              PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => SettingsPage(_setDark),
+                  transitionsBuilder: (_, anim, __, child) => SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(0.0, 1.0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                          parent: anim, curve: Curves.fastOutSlowIn)),
+                      child: child)));
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    bool isDark = brightness == Brightness.dark;
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.orange,
-        brightness: Brightness.dark,
-        accentColor: Colors.orangeAccent[400]
-      ),
-      home: Material(
-        elevation: 0.0,
-        child: Backdrop(
-          frontLayer: MyHomePage(),
-          backLayer: Container(
-            height: 100.0,
-          ),
-          fab: FloatingActionButton(
-            onPressed: () {},
-            tooltip: 'GO',
-            child: Icon(Icons.smoking_rooms),
-          ),
-        ),
-      ),
+          primarySwatch: Colors.orange,
+          brightness: brightness,
+          primaryColor: isDark ? null : Colors.white,
+          toggleableActiveColor: Colors.orangeAccent[200],
+          accentColor: Colors.orangeAccent[400]),
+      home: LayoutBuilder(builder: _buildScreen),
     );
   }
 }
@@ -52,7 +98,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     location.onLocationChanged().listen((update) {
       setState(() {
-        _currentCode = encode(update["latitude"], update["longitude"], codeLength: 8);
+        _currentCode =
+            encode(update["latitude"], update["longitude"], codeLength: 8);
       });
     });
   }
@@ -62,6 +109,47 @@ class _MyHomePageState extends State<MyHomePage> {
     return Container(
       alignment: Alignment.center,
       child: Text(_currentCode),
+    );
+  }
+}
+
+class SettingsPage extends StatefulWidget {
+  final ValueChanged<bool> darkModeCallback;
+
+  SettingsPage(this.darkModeCallback);
+
+  @override
+  _SettingsState createState() => _SettingsState();
+}
+
+class _SettingsState extends State<SettingsPage> {
+  bool isDark;
+
+  Widget _buildListItem(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        return SwitchListTile(
+          title: const Text("Dark theme"),
+          value: isDark,
+          onChanged: (value) {
+            widget.darkModeCallback(value);
+            setState(() {
+              isDark = value;
+            });
+          },
+        );
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    isDark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Settings"),
+      ),
+      body: ListView.builder(itemBuilder: _buildListItem),
     );
   }
 }
