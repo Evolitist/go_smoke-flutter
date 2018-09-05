@@ -1,4 +1,6 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:location/location.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,7 +27,41 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   _AppState(this.brightness);
 
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  final FlutterLocalNotificationsPlugin notifications =
+      FlutterLocalNotificationsPlugin();
   Brightness brightness;
+
+  @override
+  void initState() {
+    super.initState();
+    notifications.initialize(InitializationSettings(
+      AndroidInitializationSettings('ic_notification'),
+      IOSInitializationSettings(),
+    ));
+    _firebaseMessaging.requestNotificationPermissions(
+        const IosNotificationSettings(sound: true, badge: true, alert: true));
+    _firebaseMessaging.configure(
+      onMessage: (message) {
+        print(message);
+        notifications.show(
+          1,
+          message['notification']['title'],
+          message['notification']['body'],
+          NotificationDetails(
+            AndroidNotificationDetails(
+              'general',
+              'General notifications',
+              '',
+              importance: Importance.High,
+            ),
+            IOSNotificationDetails(),
+          ),
+        );
+      },
+    );
+    _firebaseMessaging.getToken().then((value) => print(value));
+  }
 
   void _setDark(bool value) async {
     setState(() {

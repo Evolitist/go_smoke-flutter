@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "360158506858",
+    "firebase_url": "https://double-skyline-203809.firebaseio.com",
+    "project_id": "double-skyline-203809",
+    "storage_bucket": "double-skyline-203809.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360158506858:android:92c9fbbfa250e001",
+        "android_client_info": {
+          "package_name": "com.evolitist.gosmoke"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "360158506858-56ueo6n3mv0g0bl4c1fceft3fl1fe93s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.evolitist.gosmoke",
+            "certificate_hash": "7c546f303608df3045143a58c3af4e7a8742ab7b"
+          }
+        },
+        {
+          "client_id": "360158506858-6etc931r0b8gt45au5cnsukbigdt32ah.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-CkYpd9PbVQgQCaH8A3VXzswyX_IfwqM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "360158506858-6etc931r0b8gt45au5cnsukbigdt32ah.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
