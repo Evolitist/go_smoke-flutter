@@ -5,21 +5,17 @@ import 'package:flutter/material.dart';
 
 class BottomNotchedShape extends ShapeBorder {
   final double cornerRadius;
-  final double notchMargin;
-  final double fabRadius;
+  final double notchRadius;
 
   const BottomNotchedShape({
     this.cornerRadius: 28.0,
-    this.notchMargin: 4.0,
-    this.fabRadius: 28.0,
+    this.notchRadius: 32.0,
   });
 
   @override
   EdgeInsetsGeometry get dimensions => EdgeInsets.all(0.0);
 
   List<Offset> _calculateCurves(Rect host, Rect guest) {
-    final double notchRadius = fabRadius + notchMargin;
-
     const double s1 = 8.0;
     const double s2 = 1.0;
 
@@ -57,54 +53,47 @@ class BottomNotchedShape extends ShapeBorder {
 
   @override
   Path getInnerPath(Rect rect, {TextDirection textDirection}) {
-    return Path()
-      ..moveTo(rect.left, rect.top)
-      ..lineTo(rect.left, rect.bottom - cornerRadius)
-      ..relativeArcToPoint(
-        Offset(cornerRadius, cornerRadius),
-        radius: Radius.circular(cornerRadius),
-        clockwise: false,
-      )
-      ..lineTo(rect.right - cornerRadius, rect.bottom)
-      ..relativeArcToPoint(
-        Offset(cornerRadius, -cornerRadius),
-        radius: Radius.circular(cornerRadius),
-        clockwise: false,
-      )
-      ..lineTo(rect.right, rect.top)
-      ..close();
+    return Path()..addRect(rect);
   }
 
   @override
   Path getOuterPath(Rect rect, {TextDirection textDirection}) {
-    final double notchRadius = fabRadius + notchMargin;
-    final Rect guest =
-    Rect.fromCircle(center: rect.bottomCenter, radius: notchRadius);
-    final List<Offset> p = _calculateCurves(rect, guest);
-    return Path()
-      ..moveTo(rect.left, rect.top)
-      ..lineTo(rect.left, rect.bottom - cornerRadius)
-      ..relativeArcToPoint(
-        Offset(cornerRadius, cornerRadius),
-        radius: Radius.circular(cornerRadius),
-        clockwise: false,
-      )
-      ..lineTo(p[0].dx, p[0].dy)
-      ..quadraticBezierTo(p[1].dx, p[1].dy, p[2].dx, p[2].dy)
-      ..arcToPoint(
-        p[3],
-        radius: new Radius.circular(notchRadius),
-        clockwise: true,
-      )
-      ..quadraticBezierTo(p[4].dx, p[4].dy, p[5].dx, p[5].dy)
-      ..lineTo(rect.right - cornerRadius, rect.bottom)
-      ..relativeArcToPoint(
-        Offset(cornerRadius, -cornerRadius),
-        radius: Radius.circular(cornerRadius),
-        clockwise: false,
-      )
-      ..lineTo(rect.right, rect.top)
-      ..close();
+    if (notchRadius > 0.0) {
+      final Rect guest =
+          Rect.fromCircle(center: rect.bottomCenter, radius: notchRadius);
+      final List<Offset> p = _calculateCurves(rect, guest);
+      return Path()
+        ..moveTo(rect.left, rect.top)
+        ..lineTo(rect.left, rect.bottom - cornerRadius)
+        ..relativeArcToPoint(
+          Offset(cornerRadius, cornerRadius),
+          radius: Radius.circular(cornerRadius),
+          clockwise: false,
+        )
+        ..lineTo(p[0].dx, p[0].dy)
+        ..quadraticBezierTo(p[1].dx, p[1].dy, p[2].dx, p[2].dy)
+        ..arcToPoint(
+          p[3],
+          radius: new Radius.circular(notchRadius),
+          clockwise: true,
+        )
+        ..quadraticBezierTo(p[4].dx, p[4].dy, p[5].dx, p[5].dy)
+        ..lineTo(rect.right - cornerRadius, rect.bottom)
+        ..relativeArcToPoint(
+          Offset(cornerRadius, -cornerRadius),
+          radius: Radius.circular(cornerRadius),
+          clockwise: false,
+        )
+        ..lineTo(rect.right, rect.top)
+        ..close();
+    } else {
+      return Path()
+        ..addRRect(RRect.fromRectAndCorners(
+          rect,
+          bottomLeft: Radius.circular(cornerRadius),
+          bottomRight: Radius.circular(cornerRadius),
+        ));
+    }
   }
 
   @override
@@ -114,8 +103,27 @@ class BottomNotchedShape extends ShapeBorder {
   ShapeBorder scale(double t) {
     return BottomNotchedShape(
       cornerRadius: cornerRadius * t,
-      notchMargin: notchMargin * t,
-      fabRadius: fabRadius * t,
+      notchRadius: notchRadius * t,
     );
+  }
+
+  @override
+  ShapeBorder lerpTo(ShapeBorder b, double t) {
+    if (b is BottomNotchedShape) {
+      return BottomNotchedShape(
+        cornerRadius: lerpDouble(cornerRadius, b.cornerRadius, t),
+        notchRadius: lerpDouble(notchRadius, b.notchRadius, t),
+      );
+    }
+  }
+
+  @override
+  ShapeBorder lerpFrom(ShapeBorder a, double t) {
+    if (a is BottomNotchedShape) {
+      return BottomNotchedShape(
+        cornerRadius: lerpDouble(a.cornerRadius, cornerRadius, t),
+        notchRadius: lerpDouble(a.notchRadius, notchRadius, t),
+      );
+    }
   }
 }

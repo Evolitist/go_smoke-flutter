@@ -10,6 +10,15 @@ import 'utils.dart';
 const double _kFlingVelocity = 2.0;
 const double _kAppBarSizePortrait = 56.0;
 const double _kAppBarSizeLandscape = 48.0;
+final _FrontLayerKey frontLayerKey = _FrontLayerKey();
+
+class _FrontLayerKey extends GlobalKey<FrontLayerState> {
+  _FrontLayerKey() : super.constructor();
+
+  void toggleFab() {
+    currentState._toggleFab();
+  }
+}
 
 class Backdrop extends StatefulWidget {
   final Widget frontLayer;
@@ -33,7 +42,7 @@ class _BackdropState extends State<Backdrop>
     with SingleTickerProviderStateMixin {
   final GlobalKey _backdropKey = GlobalKey(debugLabel: 'Backdrop');
 
-  final SizeSavingDelegate _backDelegate = SizeSavingDelegate();
+  final SizeSavingDelegate _delegate = SizeSavingDelegate();
   AnimationController _controller;
   double _size;
   double _dragOffset;
@@ -67,28 +76,27 @@ class _BackdropState extends State<Backdrop>
 
   Widget _buildFrontLayer(BuildContext context, BoxConstraints constraints) {
     Animation<EdgeInsets> layerAnimation = EdgeInsetsTween(
-      begin: EdgeInsets.only(bottom: _backDelegate.childHeight),
+      begin: EdgeInsets.only(bottom: _delegate.childHeight),
       end: EdgeInsets.all(0.0),
     ).animate(_controller.view);
     return PaddingTransition(
       padding: layerAnimation,
       child: _FrontLayer(
+        key: frontLayerKey,
         child: widget.frontLayer,
         fab: widget.fab,
         size: _size,
         dragStart: (value) => _dragOffset = value,
         dragUpdate: (details) {
-          _controller.value = (details.globalPosition.dy -
-                  _backDelegate.diffHeight +
-                  _dragOffset) /
-              _backDelegate.childHeight;
+          _controller.value =
+              (details.globalPosition.dy - _delegate.diffHeight + _dragOffset) /
+                  _delegate.childHeight;
         },
         dragEnd: (details) {
           if (_controller.value != 1.0 && _controller.value != 0.0) {
             if (details.primaryVelocity != 0) {
               _controller.fling(
-                  velocity:
-                      details.primaryVelocity / _backDelegate.childHeight);
+                  velocity: details.primaryVelocity / _delegate.childHeight);
             } else {
               final double velocity = _controller.value < 0.5 ? -1.0 : 1.0;
               _controller.fling(velocity: velocity);
@@ -127,7 +135,7 @@ class _BackdropState extends State<Backdrop>
           body: FadeTransition(
             opacity: backAnimation,
             child: CustomSingleChildLayout(
-              delegate: _backDelegate,
+              delegate: _delegate,
               child: widget.backLayer,
             ),
           ),
@@ -138,7 +146,7 @@ class _BackdropState extends State<Backdrop>
   }
 }
 
-class _FrontLayer extends StatelessWidget {
+class _FrontLayer extends StatefulWidget {
   const _FrontLayer({
     Key key,
     this.dragStart,
@@ -156,46 +164,115 @@ class _FrontLayer extends StatelessWidget {
   final FloatingActionButton fab;
   final double size;
 
+  @override
+  FrontLayerState createState() => FrontLayerState();
+}
+
+class FrontLayerState extends State<_FrontLayer>
+    with SingleTickerProviderStateMixin {
+  final SizeSavingDelegate _stackDelegate = SizeSavingDelegate();
+  AnimationController _controller;
+  BottomNotchedShape _currentShape = BottomNotchedShape();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 300),
+      value: 1.0,
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _fabVisible {
+    final AnimationStatus status = _controller.status;
+    return status == AnimationStatus.completed ||
+        status == AnimationStatus.forward;
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _currentShape = _fabVisible
+          ? BottomNotchedShape(notchRadius: 0.0)
+          : BottomNotchedShape();
+    });
+    _controller.fling(
+        velocity: _fabVisible ? -_kFlingVelocity : _kFlingVelocity);
+  }
+
+  Widget _buildMaterial(BuildContext context, BoxConstraints constraints) {
+    return Material(
+      elevation: widget.fab.elevation,
+      shape: BottomNotchedShape(notchRadius: 32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            child: widget.child,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGestureDetector(
       BuildContext context, BoxConstraints constraints) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onVerticalDragStart: (details) {
         RenderBox box = context.findRenderObject();
-        dragStart(box.globalToLocal(details.globalPosition).dy);
+        widget.dragStart(box.globalToLocal(details.globalPosition).dy);
       },
-      onVerticalDragUpdate: dragUpdate,
-      onVerticalDragEnd: dragEnd,
+      onVerticalDragUpdate: widget.dragUpdate,
+      onVerticalDragEnd: widget.dragEnd,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.bottomCenter,
-      children: <Widget>[
-        Container(
-          margin: EdgeInsets.only(bottom: size),
-          child: Material(
-            elevation: fab.elevation,
-            shape: BottomNotchedShape(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Expanded(
-                  child: child,
-                ),
-              ],
+    return CustomSingleChildLayout(
+      delegate: _stackDelegate,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: <Widget>[
+          Container(
+            margin: EdgeInsets.only(bottom: widget.size),
+            child: Material(
+              animationDuration: Duration(milliseconds: 300),
+              elevation: widget.fab.elevation,
+              shape: _currentShape,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Expanded(
+                    child: widget.child,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        Container(
-          margin: EdgeInsets.only(bottom: size),
-          height: 28.0,
-          child: LayoutBuilder(builder: _buildGestureDetector),
-        ),
-        Positioned(bottom: size - 28.0, child: fab),
-      ],
+          Container(
+            margin: EdgeInsets.only(bottom: widget.size),
+            height: 28.0,
+            child: LayoutBuilder(builder: _buildGestureDetector),
+          ),
+          Positioned(
+            bottom: widget.size - 28.0,
+            width: 56.0,
+            height: 56.0,
+            child: ScaleTransition(
+              scale: _controller,
+              child: widget.fab,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

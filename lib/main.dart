@@ -147,9 +147,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      child: Text(_currentCode),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Text(_currentCode),
+        RaisedButton(
+          onPressed: () {
+            frontLayerKey.toggleFab();
+          },
+          child: Text('ANIMATE'),
+        ),
+      ],
     );
   }
 }
