@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backdrop.dart';
 import 'olc.dart';
+import 'utils.dart';
 
 void main() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -27,6 +28,7 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   _AppState(this.brightness);
 
+  final Trigger _fabTrigger = Trigger();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
   final FlutterLocalNotificationsPlugin notifications =
       FlutterLocalNotificationsPlugin();
@@ -72,9 +74,12 @@ class _AppState extends State<App> {
 
   Widget _buildScreen(BuildContext context, BoxConstraints constraints) {
     return Material(
+      color: Colors.white,
       elevation: 0.0,
       child: Backdrop(
-        frontLayer: MyHomePage(),
+        frontLayer: MyHomePage(
+          trigger: _fabTrigger,
+        ),
         backLayer: Container(
           height: 100.0,
         ),
@@ -83,6 +88,7 @@ class _AppState extends State<App> {
           tooltip: 'GO',
           child: Icon(Icons.smoking_rooms),
         ),
+        fabTrigger: _fabTrigger,
         settingsClick: () {
           Navigator.push(
             context,
@@ -122,8 +128,9 @@ class _AppState extends State<App> {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key key, this.title, this.trigger}) : super(key: key);
 
+  final Trigger trigger;
   final String title;
 
   @override
@@ -154,7 +161,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Text(_currentCode),
         RaisedButton(
           onPressed: () {
-            frontLayerKey.toggleFab();
+            widget.trigger?.fire();
           },
           child: Text('ANIMATE'),
         ),
