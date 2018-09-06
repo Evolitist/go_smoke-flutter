@@ -13,7 +13,7 @@ const double _kAppBarSizePortrait = 56.0;
 const double _kAppBarSizeLandscape = 48.0;
 final _FrontLayerKey frontLayerKey = _FrontLayerKey();
 
-class _FrontLayerKey extends GlobalKey<FrontLayerState> {
+class _FrontLayerKey extends GlobalKey<_FrontLayerState> {
   _FrontLayerKey() : super.constructor();
 
   void toggleFab() {
@@ -41,8 +41,6 @@ class Backdrop extends StatefulWidget {
 
 class _BackdropState extends State<Backdrop>
     with SingleTickerProviderStateMixin {
-  final GlobalKey _backdropKey = GlobalKey(debugLabel: 'Backdrop');
-
   final SizeSavingDelegate _delegate = SizeSavingDelegate();
   AnimationController _controller;
   double _size;
@@ -113,8 +111,10 @@ class _BackdropState extends State<Backdrop>
     _size = MediaQuery.of(context).orientation == Orientation.portrait
         ? _kAppBarSizePortrait
         : _kAppBarSizeLandscape;
-    Animation<double> backAnimation =
-        Tween<double>(begin: 1.0, end: 0.0).animate(_controller.view);
+    Animation<double> backAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(_controller.view);
     return Stack(
       children: <Widget>[
         Scaffold(
@@ -123,7 +123,10 @@ class _BackdropState extends State<Backdrop>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               IconButton(
-                icon: Icon(Icons.menu),
+                icon: AnimatedIcon(
+                  icon: AnimatedIcons.close_menu,
+                  progress: _controller.view,
+                ),
                 onPressed: _toggleBackdropLayerVisibility,
               ),
               Container(height: _size),
@@ -166,10 +169,10 @@ class _FrontLayer extends StatefulWidget {
   final double size;
 
   @override
-  FrontLayerState createState() => FrontLayerState();
+  _FrontLayerState createState() => _FrontLayerState();
 }
 
-class FrontLayerState extends State<_FrontLayer>
+class _FrontLayerState extends State<_FrontLayer>
     with SingleTickerProviderStateMixin {
   final SizeSavingDelegate _stackDelegate = SizeSavingDelegate();
   AnimationController _controller;
@@ -197,38 +200,20 @@ class FrontLayerState extends State<_FrontLayer>
         status == AnimationStatus.forward;
   }
 
-  void _toggleFab() async {
+  void _toggleFab() {
     setState(() {
       _currentShape = _fabVisible
           ? BottomNotchedShape(notchRadius: 0.0)
           : BottomNotchedShape();
     });
     if (!_fabVisible) {
-      await Future.delayed(
+      Future.delayed(
         Duration(microseconds: 37500),
-            () =>
-            _controller.fling(
-                velocity: _kFlingVelocity),
+        () => _controller.fling(velocity: _kFlingVelocity),
       );
     } else {
-      _controller.fling(
-          velocity: -_kFlingVelocity);
+      _controller.fling(velocity: -_kFlingVelocity);
     }
-  }
-
-  Widget _buildMaterial(BuildContext context, BoxConstraints constraints) {
-    return Material(
-      elevation: widget.fab.elevation,
-      shape: BottomNotchedShape(notchRadius: 32.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            child: widget.child,
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildGestureDetector(
@@ -277,7 +262,7 @@ class FrontLayerState extends State<_FrontLayer>
             width: 56.0,
             height: 56.0,
             child: ScaleTransition(
-              scale: _controller,
+              scale: _controller.view,
               child: widget.fab,
             ),
           ),
