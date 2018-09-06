@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 class BottomNotchedShape extends ShapeBorder {
   final double cornerRadius;
   final double notchRadius;
+  final Rect guest;
 
   const BottomNotchedShape({
     this.cornerRadius: 28.0,
     this.notchRadius: 32.0,
+    this.guest,
   });
 
   @override
@@ -59,9 +61,7 @@ class BottomNotchedShape extends ShapeBorder {
   @override
   Path getOuterPath(Rect rect, {TextDirection textDirection}) {
     if (notchRadius > 0.0) {
-      final Rect guest =
-          Rect.fromCircle(center: rect.bottomCenter, radius: notchRadius);
-      final List<Offset> p = _calculateCurves(rect, guest);
+      final List<Offset> p = _simpleCalcCurves(notchRadius, rect.bottomCenter);
       return Path()
         ..moveTo(rect.left, rect.top)
         ..lineTo(rect.left, rect.bottom - cornerRadius)
@@ -115,6 +115,7 @@ class BottomNotchedShape extends ShapeBorder {
         notchRadius: lerpDouble(notchRadius, b.notchRadius, t),
       );
     }
+    return super.lerpTo(b, t);
   }
 
   @override
@@ -125,5 +126,30 @@ class BottomNotchedShape extends ShapeBorder {
         notchRadius: lerpDouble(a.notchRadius, notchRadius, t),
       );
     }
+    return super.lerpFrom(a, t);
   }
+}
+
+List<Offset> _simpleCalcCurves(double notchRadius, Offset guest) {
+  const double s1 = 8.0;
+  const double s2 = 1.0;
+
+  final double r = notchRadius;
+  final double a = -1.0 * r - s2;
+
+  final double p2x = (r * r) / (a);
+  final double p2y = -math.sqrt(r * r - p2x * p2x);
+
+  final List<Offset> p = new List<Offset>(6);
+
+  p[0] = Offset(a - s1, 0.0);
+  p[1] = Offset(a, 0.0);
+  p[2] = Offset(p2x, p2y);
+  p[3] = Offset(-1.0 * p[2].dx, p[2].dy);
+  p[4] = Offset(-1.0 * p[1].dx, p[1].dy);
+  p[5] = Offset(-1.0 * p[0].dx, p[0].dy);
+
+  for (int i = 0; i < p.length; i += 1) p[i] += guest;
+
+  return p;
 }

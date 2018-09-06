@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -178,7 +179,7 @@ class FrontLayerState extends State<_FrontLayer>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: Duration(milliseconds: 300),
+      duration: Duration(microseconds: 262500),
       value: 1.0,
       vsync: this,
     );
@@ -196,14 +197,23 @@ class FrontLayerState extends State<_FrontLayer>
         status == AnimationStatus.forward;
   }
 
-  void _toggleFab() {
+  void _toggleFab() async {
     setState(() {
       _currentShape = _fabVisible
           ? BottomNotchedShape(notchRadius: 0.0)
           : BottomNotchedShape();
     });
-    _controller.fling(
-        velocity: _fabVisible ? -_kFlingVelocity : _kFlingVelocity);
+    if (!_fabVisible) {
+      await Future.delayed(
+        Duration(microseconds: 37500),
+            () =>
+            _controller.fling(
+                velocity: _kFlingVelocity),
+      );
+    } else {
+      _controller.fling(
+          velocity: -_kFlingVelocity);
+    }
   }
 
   Widget _buildMaterial(BuildContext context, BoxConstraints constraints) {
