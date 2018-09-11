@@ -26,8 +26,10 @@ class _AppState extends State<App> {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
   final FlutterLocalNotificationsPlugin notifications =
       FlutterLocalNotificationsPlugin();
-  Brightness brightness = (_prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
-  bool docked;
+  String _currentCode = "";
+  Brightness brightness =
+      (_prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
+  bool docked = _prefs.getBool("docked") ?? false;
 
   @override
   void initState() {
@@ -37,7 +39,12 @@ class _AppState extends State<App> {
       IOSInitializationSettings(),
     ));
     _firebaseMessaging.requestNotificationPermissions(
-        const IosNotificationSettings(sound: true, badge: true, alert: true));
+      const IosNotificationSettings(
+        sound: true,
+        badge: true,
+        alert: true,
+      ),
+    );
     _firebaseMessaging.configure(
       onMessage: (message) {
         print(message);
@@ -58,7 +65,19 @@ class _AppState extends State<App> {
       },
     );
     _firebaseMessaging.getToken().then((value) => print(value));
-    docked = _prefs.getBool("docked") ?? false;
+    location.hasPermission().then((value) {
+      if (value) {
+        location.onLocationChanged().listen((update) {
+          setState(() {
+            _currentCode = encode(
+              update["latitude"],
+              update["longitude"],
+              codeLength: 8,
+            );
+          });
+        });
+      }
+    });
   }
 
   bool get _isDark => brightness == Brightness.dark;
@@ -81,8 +100,18 @@ class _AppState extends State<App> {
     return Container(
       color: _isDark ? Colors.grey[850] : Colors.grey[50],
       child: Backdrop(
-        frontLayer: MyHomePage(
-          trigger: _fabTrigger,
+        frontLayer: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Text(_currentCode),
+            RaisedButton(
+              onPressed: () {
+                _fabTrigger.fire();
+              },
+              child: Text('ANIMATE'),
+            ),
+          ],
         ),
         backLayer: Container(
           height: 100.0,
@@ -131,48 +160,6 @@ class _AppState extends State<App> {
           toggleableActiveColor: Colors.orangeAccent[200],
           accentColor: Colors.orangeAccent[400]),
       home: LayoutBuilder(builder: _buildScreen),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({this.trigger});
-
-  final Trigger trigger;
-
-  @override
-  _MyHomePageState createState() => new _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  final Location location = Location();
-  String _currentCode = "";
-
-  @override
-  void initState() {
-    super.initState();
-    location.onLocationChanged().listen((update) {
-      setState(() {
-        _currentCode =
-            encode(update["latitude"], update["longitude"], codeLength: 8);
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        Text(_currentCode),
-        RaisedButton(
-          onPressed: () {
-            widget.trigger?.fire();
-          },
-          child: Text('ANIMATE'),
-        ),
-      ],
     );
   }
 }
