@@ -16,6 +16,7 @@ class Backdrop extends StatefulWidget {
   final Widget frontLayer;
   final Widget backLayer;
   final FloatingActionButton fab;
+  final bool dockFab;
   final VoidCallback settingsClick;
   final Trigger fabTrigger;
 
@@ -23,6 +24,7 @@ class Backdrop extends StatefulWidget {
     @required this.frontLayer,
     @required this.backLayer,
     this.fab,
+    this.dockFab: false,
     this.fabTrigger,
     this.settingsClick,
   })  : assert(frontLayer != null),
@@ -36,7 +38,8 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
   final SizeSavingDelegate _delegate = SizeSavingDelegate();
   AnimationController _layerController;
   AnimationController _fabController;
-  BottomNotchedShape _currentShape = BottomNotchedShape();
+  ShapeBorder _layerShape = BottomNotchedShape();
+  ShapeBorder _bottomBarShape = TopNotchedShape();
   double _size;
   double _dragOffset;
 
@@ -83,9 +86,9 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
 
   void _toggleFab() {
     setState(() {
-      _currentShape = _fabVisible
-          ? BottomNotchedShape(notchRadius: 0.0)
-          : BottomNotchedShape();
+      //_layerShape = widget.dockFab
+      _bottomBarShape = TopNotchedShape(notchRadius: _fabVisible ? 0.0 : 32.0);
+      _layerShape = BottomNotchedShape(notchRadius: _fabVisible ? 0.0 : 32.0);
     });
     if (!_fabVisible) {
       Future.delayed(
@@ -97,6 +100,31 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
     }
   }
 
+  Widget _buildBottomBar(BuildContext context, BoxConstraints constraints) {
+    return Material(
+      elevation: widget.dockFab ? widget.fab.elevation : 0.0,
+      shape: widget.dockFab ? _bottomBarShape : null,
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          IconButton(
+            icon: AnimatedIcon(
+              icon: AnimatedIcons.close_menu,
+              progress: _layerController.view,
+            ),
+            onPressed: _toggleBackdropLayerVisibility,
+          ),
+          Container(height: _size),
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: widget.settingsClick,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFrontLayer(BuildContext context, BoxConstraints constraints) {
     Animation<EdgeInsets> layerAnimation = EdgeInsetsTween(
       begin: EdgeInsets.only(bottom: _delegate.childHeight + _size),
@@ -106,8 +134,10 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       padding: layerAnimation,
       child: Material(
         animationDuration: Duration(milliseconds: 300),
-        elevation: widget.fab.elevation,
-        shape: _currentShape,
+        elevation: widget.dockFab ? 2.0 : widget.fab.elevation,
+        shape: widget.dockFab
+            ? BottomNotchedShape(notchRadius: 0.0)
+            : _layerShape,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -163,17 +193,27 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
   }
 
   Widget _buildFab(BuildContext context, BoxConstraints constraints) {
-    Animation<EdgeInsets> layerAnimation = EdgeInsetsTween(
-      begin: EdgeInsets.only(bottom: _delegate.childHeight + 28.0),
-      end: EdgeInsets.only(bottom: _size - 28.0),
-    ).animate(_layerController.view);
-    return PaddingTransition(
-      padding: layerAnimation,
-      child: ScaleTransition(
-        scale: _fabController.view,
-        child: widget.fab,
-      ),
-    );
+    if (widget.dockFab) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: _size - 28.0),
+        child: ScaleTransition(
+          scale: _fabController.view,
+          child: widget.fab,
+        ),
+      );
+    } else {
+      Animation<EdgeInsets> layerAnimation = EdgeInsetsTween(
+        begin: EdgeInsets.only(bottom: _delegate.childHeight + 28.0),
+        end: EdgeInsets.only(bottom: _size - 28.0),
+      ).animate(_layerController.view);
+      return PaddingTransition(
+        padding: layerAnimation,
+        child: ScaleTransition(
+          scale: _fabController.view,
+          child: widget.fab,
+        ),
+      );
+    }
   }
 
   @override
@@ -185,6 +225,29 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       begin: 1.0,
       end: 0.0,
     ).animate(_layerController.view);
+    List<Widget> stackChildren = widget.dockFab
+        ? <Widget>[
+            LayoutBuilder(builder: _buildFrontLayer),
+            LayoutBuilder(builder: _buildGestureDetectorContainer),
+            LayoutBuilder(builder: _buildFab),
+            Positioned(
+              bottom: 0.0,
+              left: 0.0,
+              right: 0.0,
+              child: LayoutBuilder(builder: _buildBottomBar),
+            ),
+          ]
+        : <Widget>[
+            Positioned(
+              bottom: 0.0,
+              left: 0.0,
+              right: 0.0,
+              child: LayoutBuilder(builder: _buildBottomBar),
+            ),
+            LayoutBuilder(builder: _buildFrontLayer),
+            LayoutBuilder(builder: _buildGestureDetectorContainer),
+            LayoutBuilder(builder: _buildFab),
+          ];
     return Stack(
       alignment: Alignment.bottomCenter,
       children: <Widget>[
@@ -198,32 +261,10 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
             ),
           ),
         ),
-        Positioned(
-          bottom: 0.0,
-          left: 0.0,
-          right: 0.0,
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              IconButton(
-                icon: AnimatedIcon(
-                  icon: AnimatedIcons.close_menu,
-                  progress: _layerController.view,
-                ),
-                onPressed: _toggleBackdropLayerVisibility,
-              ),
-              Container(height: _size),
-              IconButton(
-                icon: Icon(Icons.settings),
-                onPressed: widget.settingsClick,
-              ),
-            ],
-          ),
-        ),
-        LayoutBuilder(builder: _buildFrontLayer),
-        LayoutBuilder(builder: _buildGestureDetectorContainer),
-        LayoutBuilder(builder: _buildFab),
+        stackChildren[0],
+        stackChildren[1],
+        stackChildren[2],
+        stackChildren[3],
       ],
     );
   }

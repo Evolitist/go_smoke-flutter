@@ -8,31 +8,26 @@ import 'backdrop.dart';
 import 'olc.dart';
 import 'utils.dart';
 
+SharedPreferences _prefs;
+
 void main() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  Brightness brightness =
-      (prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
-  runApp(new App(prefs, brightness));
+  _prefs = await SharedPreferences.getInstance();
+  runApp(new App());
 }
 
 class App extends StatefulWidget {
-  App(this.prefs, this._brightness);
-
-  final SharedPreferences prefs;
-  final Brightness _brightness;
-
   @override
-  _AppState createState() => _AppState(_brightness);
+  _AppState createState() => _AppState();
 }
 
 class _AppState extends State<App> {
-  _AppState(this.brightness);
-
+  final Location location = Location();
   final Trigger _fabTrigger = Trigger();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
   final FlutterLocalNotificationsPlugin notifications =
       FlutterLocalNotificationsPlugin();
-  Brightness brightness;
+  Brightness brightness = (_prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
+  bool docked;
 
   @override
   void initState() {
@@ -63,19 +58,28 @@ class _AppState extends State<App> {
       },
     );
     _firebaseMessaging.getToken().then((value) => print(value));
+    docked = _prefs.getBool("docked") ?? false;
   }
+
+  bool get _isDark => brightness == Brightness.dark;
 
   void _setDark(bool value) async {
     setState(() {
       brightness = value ? Brightness.dark : Brightness.light;
     });
-    await widget.prefs.setBool("isDark", value);
+    _prefs.setBool("isDark", value);
+  }
+
+  void _setDocked(bool value) async {
+    setState(() {
+      docked = value;
+    });
+    _prefs.setBool("docked", value);
   }
 
   Widget _buildScreen(BuildContext context, BoxConstraints constraints) {
-    return Material(
-      color: Colors.white,
-      elevation: 0.0,
+    return Container(
+      color: _isDark ? Colors.grey[850] : Colors.grey[50],
       child: Backdrop(
         frontLayer: MyHomePage(
           trigger: _fabTrigger,
@@ -88,12 +92,16 @@ class _AppState extends State<App> {
           tooltip: 'GO',
           child: Icon(Icons.smoking_rooms),
         ),
+        dockFab: docked,
         fabTrigger: _fabTrigger,
         settingsClick: () {
           Navigator.push(
             context,
             PageRouteBuilder(
-              pageBuilder: (_, __, ___) => SettingsPage(_setDark),
+              pageBuilder: (_, __, ___) => SettingsPage(
+                    _setDark,
+                    _setDocked,
+                  ),
               transitionsBuilder: (_, anim, __, child) => SlideTransition(
                     position: Tween<Offset>(
                       begin: Offset(0.0, 1.0),
@@ -128,10 +136,9 @@ class _AppState extends State<App> {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title, this.trigger}) : super(key: key);
+  MyHomePage({this.trigger});
 
   final Trigger trigger;
-  final String title;
 
   @override
   _MyHomePageState createState() => new _MyHomePageState();
@@ -172,8 +179,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class SettingsPage extends StatefulWidget {
   final ValueChanged<bool> darkModeCallback;
+  final ValueChanged<bool> dockFabCallback;
 
-  SettingsPage(this.darkModeCallback);
+  SettingsPage(this.darkModeCallback, this.dockFabCallback);
 
   @override
   _SettingsState createState() => _SettingsState();
@@ -181,6 +189,14 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsState extends State<SettingsPage> {
   bool isDark;
+  bool dockFab;
+
+  @override
+  void initState() {
+    super.initState();
+    isDark = _prefs.getBool("isDark") ?? false;
+    dockFab = _prefs.getBool("docked") ?? false;
+  }
 
   Widget _buildListItem(BuildContext context, int index) {
     switch (index) {
@@ -195,13 +211,24 @@ class _SettingsState extends State<SettingsPage> {
             });
           },
         );
+      case 1:
+        return SwitchListTile(
+          title: const Text("Dock FAB"),
+          value: dockFab,
+          onChanged: (value) {
+            widget.dockFabCallback(value);
+            setState(() {
+              dockFab = value;
+            });
+          },
+        );
+      default:
+        return null;
     }
-    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         title: Text("Settings"),
