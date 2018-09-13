@@ -27,9 +27,9 @@ class _AppState extends State<App> {
   final FlutterLocalNotificationsPlugin notifications =
       FlutterLocalNotificationsPlugin();
   String _currentCode = "";
-  Brightness brightness =
+  Brightness _brightness =
       (_prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
-  bool docked = _prefs.getBool("docked") ?? false;
+  bool _docked = _prefs.getBool("docked") ?? false;
 
   @override
   void initState() {
@@ -80,18 +80,18 @@ class _AppState extends State<App> {
     });
   }
 
-  bool get _isDark => brightness == Brightness.dark;
+  bool get _isDark => _brightness == Brightness.dark;
 
   void _setDark(bool value) async {
     setState(() {
-      brightness = value ? Brightness.dark : Brightness.light;
+      _brightness = value ? Brightness.dark : Brightness.light;
     });
     _prefs.setBool("isDark", value);
   }
 
   void _setDocked(bool value) async {
     setState(() {
-      docked = value;
+      _docked = value;
     });
     _prefs.setBool("docked", value);
   }
@@ -121,13 +121,13 @@ class _AppState extends State<App> {
           tooltip: 'GO',
           child: Icon(Icons.smoking_rooms),
         ),
-        dockFab: docked,
+        dockFab: _docked,
         fabTrigger: _fabTrigger,
         settingsClick: () {
           Navigator.push(
             context,
             PageRouteBuilder(
-              pageBuilder: (_, __, ___) => SettingsPage(
+              pageBuilder: (_, __, ___) => _SettingsPage(
                     _setDark,
                     _setDocked,
                   ),
@@ -150,12 +150,12 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = brightness == Brightness.dark;
+    bool isDark = _brightness == Brightness.dark;
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
           primarySwatch: Colors.orange,
-          brightness: brightness,
+          brightness: _brightness,
           primaryColor: isDark ? null : Colors.white,
           toggleableActiveColor: Colors.orangeAccent[200],
           accentColor: Colors.orangeAccent[400]),
@@ -164,17 +164,17 @@ class _AppState extends State<App> {
   }
 }
 
-class SettingsPage extends StatefulWidget {
+class _SettingsPage extends StatefulWidget {
   final ValueChanged<bool> darkModeCallback;
   final ValueChanged<bool> dockFabCallback;
 
-  SettingsPage(this.darkModeCallback, this.dockFabCallback);
+  _SettingsPage(this.darkModeCallback, this.dockFabCallback);
 
   @override
   _SettingsState createState() => _SettingsState();
 }
 
-class _SettingsState extends State<SettingsPage> {
+class _SettingsState extends State<_SettingsPage> {
   bool isDark;
   bool dockFab;
 
