@@ -11,7 +11,7 @@ dependencies:
   shared_preferences: ^0.4.2
   firebase_messaging: ^2.0.0
   flutter_local_notifications: ^0.3.7
-  location: ^1.4.1
+  geolocator: ^1.7.0
 #  google_maps_flutter:
 #     git:
 #       url: git://github.com/flutter/plugins

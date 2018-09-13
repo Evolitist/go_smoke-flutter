@@ -1,7 +1,9 @@
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backdrop.dart';
@@ -21,7 +23,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final Location location = Location();
+  final Geolocator _location = Geolocator();
   final Trigger _fabTrigger = Trigger();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
   final FlutterLocalNotificationsPlugin notifications =
@@ -65,18 +67,48 @@ class _AppState extends State<App> {
       },
     );
     _firebaseMessaging.getToken().then((value) => print(value));
-    location.hasPermission().then((value) {
-      if (value) {
-        location.onLocationChanged().listen((update) {
-          setState(() {
-            _currentCode = encode(
-              update["latitude"],
-              update["longitude"],
-              codeLength: 8,
-            );
-          });
-        });
+    _initLocation();
+  }
+
+  void _initLocation() async {
+    _location.checkGeolocationPermissionStatus().then((value) async {
+      print(value);
+      if (value != GeolocationStatus.granted &&
+          value != GeolocationStatus.restricted) {
+        try {
+          await _location.getCurrentPosition();
+        } catch (e) {
+          print(e);
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+                  title: Text('Permissions error'),
+                  content:
+                      Text('Location permission is reqired for app to work.'),
+                  actions: <Widget>[
+                    FlatButton(onPressed: () => exit(0), child: Text('OK')),
+                  ],
+                ),
+          );
+          return;
+        }
       }
+      _location
+          .getPositionStream(
+            LocationOptions(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 20,
+            ),
+          )
+          .then((value) => value.listen((update) {
+                setState(() {
+                  _currentCode = encode(
+                    update.latitude,
+                    update.longitude,
+                    codeLength: 8,
+                  );
+                });
+              }));
     });
   }
 
