@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -7,9 +8,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backdrop.dart';
+import 'groups/chips.dart';
 import 'olc.dart';
 import 'utils.dart';
 
+final Random _random = Random();
 SharedPreferences _prefs;
 
 void main() async {
@@ -32,6 +35,16 @@ class _AppState extends State<App> {
   Brightness _brightness =
       (_prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
   bool _docked = _prefs.getBool("docked") ?? false;
+  List<String> _groups = <String>[
+    'one',
+    'two',
+    'three',
+    'four',
+    'five',
+    'six',
+    'seven',
+    'eight'
+  ];
 
   @override
   void initState() {
@@ -143,10 +156,66 @@ class _AppState extends State<App> {
               },
               child: Text('ANIMATE'),
             ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                RaisedButton(
+                  onPressed: () {
+                    setState(() {
+                      _groups.add(String.fromCharCodes(List.generate(
+                          3 + _random.nextInt(5),
+                          (i) => 0x61 + _random.nextInt(26))));
+                    });
+                  },
+                  child: Text('+GROUP'),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    setState(() {
+                      _groups.removeLast();
+                    });
+                  },
+                  child: Text('-GROUP'),
+                ),
+              ],
+            ),
           ],
         ),
-        backLayer: Container(
-          height: 100.0,
+        backLayer: Padding(
+          padding: EdgeInsets.only(top: 44.0, left: 16.0, right: 16.0),
+          child: Material(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                ChoiceChipBlock(
+                  //TODO: decide if we want chips or something else for this control
+                  labelText: 'Spare cigarettes',
+                  iconFont: true,
+                  names: <String>[
+                    String.fromCharCode(0xeb4a),
+                    String.fromCharCode(0xeb4b),
+                    String.fromCharCodes(<int>[
+                      0xeb4b,
+                      0xeb4b,
+                    ]),
+                    String.fromCharCodes(<int>[
+                      0xeb4b,
+                      0xeb4b,
+                      0xeb4b,
+                    ]),
+                  ],
+                ),
+                Container(
+                  height: 16.0,
+                ),
+                FilterChipBlock(
+                  labelText: 'Groups',
+                  names: _groups,
+                ),
+              ],
+            ),
+          ),
         ),
         fab: FloatingActionButton(
           onPressed: () {},
