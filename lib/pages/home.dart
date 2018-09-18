@@ -17,7 +17,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final Trigger _fabTrigger = Trigger();
   final Location _location = Location();
-  String _currentCode;
+  String _currentCode = "";
 
   @override
   void initState() {

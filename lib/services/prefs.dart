@@ -15,9 +15,9 @@ class Prefs {
 
   bool getBool(String key, [bool defaultValue = false]) => _prefs?.getBool(key) ?? defaultValue;
 
-  bool listenBool(String key, ValueChanged<bool> listener) {
+  bool listenBool(String key, ValueChanged<bool> listener, [bool defaultValue = false]) {
     _listeners[key] = listener;
-    return _prefs?.getBool(key);
+    return _prefs?.getBool(key) ?? defaultValue;
   }
 
   void setBool(String key, bool value) {
