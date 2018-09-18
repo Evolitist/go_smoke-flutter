@@ -135,9 +135,8 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       child: Material(
         animationDuration: Duration(milliseconds: 300),
         elevation: widget.dockFab ? 2.0 : widget.fab.elevation,
-        shape: widget.dockFab
-            ? BottomNotchedShape(notchRadius: 0.0)
-            : _layerShape,
+        shape:
+            widget.dockFab ? BottomNotchedShape(notchRadius: 0.0) : _layerShape,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -159,9 +158,11 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
         _dragOffset = box.globalToLocal(details.globalPosition).dy;
       },
       onVerticalDragUpdate: (details) {
-        _layerController.value =
-            (details.globalPosition.dy - _delegate.diffHeight + _dragOffset) /
-                _delegate.childHeight;
+        _layerController.value = (details.globalPosition.dy -
+                _delegate.diffHeight +
+                _dragOffset +
+                _size) /
+            _delegate.childHeight;
       },
       onVerticalDragEnd: (details) {
         if (_layerController.value != 1.0 && _layerController.value != 0.0) {
@@ -186,7 +187,7 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
     return PaddingTransition(
       padding: layerAnimation,
       child: Container(
-        height: 28.0,
+        height: 32.0,
         child: LayoutBuilder(builder: _buildGestureDetector),
       ),
     );
@@ -251,12 +252,16 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
     return Stack(
       alignment: Alignment.bottomCenter,
       children: <Widget>[
-        Padding(
-          padding: EdgeInsets.only(bottom: _size),
-          child: FadeTransition(
-            opacity: backAnimation,
-            child: CustomSingleChildLayout(
-              delegate: _delegate,
+        FadeTransition(
+          opacity: backAnimation,
+          child: CustomSingleChildLayout(
+            delegate: _delegate,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 16.0,
+                right: 16.0,
+                bottom: _size,
+              ),
               child: widget.backLayer,
             ),
           ),

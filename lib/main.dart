@@ -16,6 +16,7 @@ final Random _random = Random();
 SharedPreferences _prefs;
 
 void main() async {
+  MaterialPageRoute.debugEnableFadingRoutes = true;
   _prefs = await SharedPreferences.getInstance();
   runApp(new App());
 }
@@ -181,30 +182,26 @@ class _AppState extends State<App> {
             ),
           ],
         ),
-        backLayer: Padding(
-          padding: EdgeInsets.only(top: 44.0, left: 16.0, right: 16.0),
-          child: Material(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                ChoiceChipBlock(
-                  //TODO: decide if we want chips or something else for this control
-                  labelText: 'Cigarettes',
-                  selected: 1,
-                  names: <String>[
-                    'none', '1', '2+'
-                  ],
-                ),
-                Container(
-                  height: 16.0,
-                ),
-                FilterChipBlock(
-                  labelText: 'Groups',
-                  names: _groups,
-                ),
-              ],
-            ),
+        backLayer: Material(
+          elevation: 0.0,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              ChoiceChipBlock(
+                //TODO: decide if we want chips or something else for this control
+                labelText: 'Cigarettes',
+                selected: 1,
+                names: <String>['none', '1', '2+'],
+              ),
+              Container(
+                height: 16.0,
+              ),
+              FilterChipBlock(
+                labelText: 'Groups',
+                names: _groups,
+              ),
+            ],
           ),
         ),
         fab: FloatingActionButton(
@@ -217,20 +214,10 @@ class _AppState extends State<App> {
         settingsClick: () {
           Navigator.push(
             context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => _SettingsPage(
+            MaterialPageRoute(
+              builder: (context) => _SettingsPage(
                     _setDark,
                     _setDocked,
-                  ),
-              transitionsBuilder: (_, anim, __, child) => SlideTransition(
-                    position: Tween<Offset>(
-                      begin: Offset(0.0, 1.0),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: anim,
-                      curve: Curves.fastOutSlowIn,
-                    )),
-                    child: child,
                   ),
             ),
           );
@@ -245,11 +232,11 @@ class _AppState extends State<App> {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-          primarySwatch: Colors.orange,
-          brightness: _brightness,
-          primaryColor: isDark ? null : Colors.white,
-          toggleableActiveColor: Colors.orangeAccent[200],
-          accentColor: Colors.orangeAccent[400],
+        primarySwatch: Colors.orange,
+        brightness: _brightness,
+        primaryColor: isDark ? null : Colors.white,
+        toggleableActiveColor: Colors.orangeAccent[200],
+        accentColor: Colors.orangeAccent[400],
       ),
       home: LayoutBuilder(builder: _buildScreen),
     );
