@@ -67,14 +67,14 @@ class _FilterChipBlockState extends State<FilterChipBlock> {
 class ChoiceChipBlock extends StatefulWidget {
   final String labelText;
   final List<String> names;
-  final bool iconFont;
+  final int selected;
   final ValueSetter<int> onSelected;
 
   const ChoiceChipBlock({
     Key key,
     this.labelText,
     @required this.names,
-    this.iconFont: false,
+    this.selected: 0,
     this.onSelected,
   })  : assert(names != null),
         super(key: key);
@@ -85,6 +85,12 @@ class ChoiceChipBlock extends StatefulWidget {
 
 class _ChoiceChipBlockState extends State<ChoiceChipBlock> {
   int _selected = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.selected;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,26 +104,13 @@ class _ChoiceChipBlockState extends State<ChoiceChipBlock> {
         children: new List<Widget>.generate(
           widget.names.length,
           (i) {
-            List<Icon> icons;
-            if (widget.iconFont) {
-              icons = List.generate(
-                widget.names[i].length,
-                (j) => Icon(IconData(
-                      widget.names[i].codeUnitAt(j),
-                      fontFamily: 'MaterialIcons',
-                    )),
-                growable: false,
-              );
-            }
-            return FilterChip(
-              label: widget.iconFont
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: icons,
-                    )
-                  : Text(widget.names[i]),
+            ThemeData theme = Theme.of(context);
+            return ChoiceChip(
+              label: Text(widget.names[i]),
               selected: _selected == i,
+              selectedColor: Colors.orange.withAlpha(0x3d),
+              labelStyle: theme.chipTheme.labelStyle.copyWith(color: theme.brightness == Brightness.light ? Colors.black : Colors.white),
+              shape: StadiumBorder(side: BorderSide(color: Colors.orange, style: _selected == i ? BorderStyle.solid : BorderStyle.none)),
               onSelected: (b) {
                 setState(() {
                   _selected = i;

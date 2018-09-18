@@ -190,20 +190,10 @@ class _AppState extends State<App> {
               children: <Widget>[
                 ChoiceChipBlock(
                   //TODO: decide if we want chips or something else for this control
-                  labelText: 'Spare cigarettes',
-                  iconFont: true,
+                  labelText: 'Cigarettes',
+                  selected: 1,
                   names: <String>[
-                    String.fromCharCode(0xeb4a),
-                    String.fromCharCode(0xeb4b),
-                    String.fromCharCodes(<int>[
-                      0xeb4b,
-                      0xeb4b,
-                    ]),
-                    String.fromCharCodes(<int>[
-                      0xeb4b,
-                      0xeb4b,
-                      0xeb4b,
-                    ]),
+                    'none', '1', '2+'
                   ],
                 ),
                 Container(
@@ -259,7 +249,8 @@ class _AppState extends State<App> {
           brightness: _brightness,
           primaryColor: isDark ? null : Colors.white,
           toggleableActiveColor: Colors.orangeAccent[200],
-          accentColor: Colors.orangeAccent[400]),
+          accentColor: Colors.orangeAccent[400],
+      ),
       home: LayoutBuilder(builder: _buildScreen),
     );
   }
