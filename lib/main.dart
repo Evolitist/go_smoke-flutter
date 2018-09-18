@@ -1,15 +1,14 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'backdrop.dart';
 import 'groups/chips.dart';
 import 'olc.dart';
+import 'services/fcm.dart';
 import 'utils.dart';
 
 final Random _random = Random();
@@ -28,10 +27,8 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   final Geolocator _location = Geolocator();
+  final FCM _fcm = FCM();
   final Trigger _fabTrigger = Trigger();
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
-  final FlutterLocalNotificationsPlugin notifications =
-      FlutterLocalNotificationsPlugin();
   String _currentCode = "";
   Brightness _brightness =
       (_prefs.getBool("isDark") ?? false) ? Brightness.dark : Brightness.light;
@@ -50,37 +47,6 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    notifications.initialize(InitializationSettings(
-      AndroidInitializationSettings('ic_notification'),
-      IOSInitializationSettings(),
-    ));
-    _firebaseMessaging.requestNotificationPermissions(
-      const IosNotificationSettings(
-        sound: true,
-        badge: true,
-        alert: true,
-      ),
-    );
-    _firebaseMessaging.configure(
-      onMessage: (message) {
-        print(message);
-        notifications.show(
-          1,
-          message['notification']['title'],
-          message['notification']['body'],
-          NotificationDetails(
-            AndroidNotificationDetails(
-              'general',
-              'General notifications',
-              '',
-              importance: Importance.High,
-            ),
-            IOSNotificationDetails(),
-          ),
-        );
-      },
-    );
-    _firebaseMessaging.getToken().then((value) => print(value));
     _initLocation();
   }
 
