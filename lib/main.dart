@@ -5,7 +5,7 @@ import 'services/prefs.dart';
 import 'pages/home.dart';
 
 void main() async {
-  MaterialPageRoute.debugEnableFadingRoutes = true;
+  await Prefs.build();
   runApp(new App());
 }
 
@@ -22,9 +22,9 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    _brightness = _prefs.listenBool("isDark", (value) => setState(() {
+    _prefs<bool>('isDark', (value) => setState(() {
       _brightness = value ? Brightness.dark : Brightness.light;
-    })) ? Brightness.dark : Brightness.light;
+    }), false);
   }
 
   @override

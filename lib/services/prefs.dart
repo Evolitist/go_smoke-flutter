@@ -1,27 +1,70 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Prefs {
-  final Map<String, ValueChanged<bool>> _listeners = Map();
+  static final Prefs _singleton = Prefs._();
+  final Map<String, ValueNotifier<dynamic>> _listeners = Map();
   SharedPreferences _prefs;
 
-  Prefs() {
-    _init();
+  Prefs._();
+
+  factory Prefs() {
+    if (_singleton._prefs == null) {
+      throw Exception('You must call build() before using constructor');
+    }
+    return _singleton;
   }
 
-  void _init() async {
-    _prefs = await SharedPreferences.getInstance();
+  static Future<Prefs> build() async {
+    _singleton._prefs ??= await SharedPreferences.getInstance();
+    return _singleton;
   }
 
-  bool getBool(String key, [bool defaultValue = false]) => _prefs?.getBool(key) ?? defaultValue;
-
-  bool listenBool(String key, ValueChanged<bool> listener, [bool defaultValue = false]) {
-    _listeners[key] = listener;
-    return _prefs?.getBool(key) ?? defaultValue;
+  void _checkListener<T>(String key, T value) {
+    if (!_listeners.containsKey(key)) {
+      _listeners[key] = ValueNotifier(value);
+      _set(key, value);
+    }
   }
 
-  void setBool(String key, bool value) {
-    _prefs?.setBool(key, value);
-    if (_listeners[key] != null) _listeners[key](value);
+  T get<T>(String key, [T defaultValue]) {
+    _checkListener<T>(key, defaultValue);
+    return _listeners[key].value;
+  }
+
+  dynamic operator [](String key) => get(key);
+
+  void set<T>(String key, T value) {
+    _checkListener<T>(key, value);
+    _set(key, value);
+    _listeners[key].value = value;
+  }
+
+  void operator []=(String key, dynamic value) => set(key, value);
+
+  void listen<T>(String key, ValueChanged<T> listener, [T defaultValue]) {
+    _checkListener<T>(key, defaultValue);
+    _listeners[key].addListener(() => listener(_prefs.get(key)));
+    listener(_listeners[key].value);
+  }
+
+  call<T>(String key, ValueChanged<T> listener, [T defaultValue]) => listen(key, listener, defaultValue);
+
+  void _set(String key, dynamic value) async {
+    if (value is bool) {
+      _prefs.setBool(key, value);
+    } else if (value is int) {
+      _prefs.setInt(key, value);
+    } else if (value is double) {
+      _prefs.setDouble(key, value);
+    } else if (value is String) {
+      _prefs.setString(key, value);
+    } else if (value is List<String>) {
+      _prefs.setStringList(key, value);
+    } else if (value != null) {
+      throw Exception('Unsupported preference type ${value.runtimeType}');
+    }
   }
 }
