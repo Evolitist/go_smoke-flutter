@@ -9,13 +9,11 @@ class SettingsPage extends StatefulWidget {
 class _SettingsState extends State<SettingsPage> {
   final Prefs _prefs = Prefs();
   bool isDark;
-  bool dockFab;
 
   @override
   void initState() {
     super.initState();
     isDark = _prefs['isDark'] ?? false;
-    dockFab = _prefs['docked'] ?? false;
   }
 
   Widget _buildListItem(BuildContext context, int index) {
@@ -28,17 +26,6 @@ class _SettingsState extends State<SettingsPage> {
             _prefs['isDark'] = value;
             setState(() {
               isDark = value;
-            });
-          },
-        );
-      case 1:
-        return SwitchListTile(
-          title: const Text("Dock FAB"),
-          value: dockFab,
-          onChanged: (value) {
-            _prefs['docked'] = value;
-            setState(() {
-              dockFab = value;
             });
           },
         );

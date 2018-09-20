@@ -16,7 +16,6 @@ class Backdrop extends StatefulWidget {
   final Widget frontLayer;
   final Widget backLayer;
   final FloatingActionButton fab;
-  final bool dockFab;
   final VoidCallback settingsClick;
   final Trigger fabTrigger;
 
@@ -24,7 +23,6 @@ class Backdrop extends StatefulWidget {
     @required this.frontLayer,
     @required this.backLayer,
     this.fab,
-    this.dockFab: false,
     this.fabTrigger,
     this.settingsClick,
   })  : assert(frontLayer != null),
@@ -39,7 +37,6 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
   AnimationController _layerController;
   AnimationController _fabController;
   ShapeBorder _layerShape = BottomNotchedShape();
-  ShapeBorder _bottomBarShape = TopNotchedShape();
   double _size;
   double _dragOffset;
 
@@ -86,8 +83,6 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
 
   void _toggleFab() {
     setState(() {
-      //_layerShape = widget.dockFab
-      _bottomBarShape = TopNotchedShape(notchRadius: _fabVisible ? 0.0 : 32.0);
       _layerShape = BottomNotchedShape(notchRadius: _fabVisible ? 0.0 : 32.0);
     });
     if (!_fabVisible) {
@@ -102,8 +97,7 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
 
   Widget _buildBottomBar(BuildContext context, BoxConstraints constraints) {
     return Material(
-      elevation: widget.dockFab ? widget.fab.elevation : 0.0,
-      shape: widget.dockFab ? _bottomBarShape : null,
+      elevation: 0.0,
       child: Row(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -134,9 +128,8 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       padding: layerAnimation,
       child: Material(
         animationDuration: Duration(milliseconds: 300),
-        elevation: widget.dockFab ? 2.0 : widget.fab.elevation,
-        shape:
-            widget.dockFab ? BottomNotchedShape(notchRadius: 0.0) : _layerShape,
+        elevation: widget.fab.elevation,
+        shape: _layerShape,
         child: ClipPath(
           clipper: BottomNotchedClipper(),
           child: widget.frontLayer,
@@ -190,16 +183,7 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
   }
 
   Widget _buildFab(BuildContext context, BoxConstraints constraints) {
-    if (widget.dockFab) {
-      return Padding(
-        padding: EdgeInsets.only(bottom: _size - 28.0),
-        child: ScaleTransition(
-          scale: _fabController.view,
-          child: widget.fab,
-        ),
-      );
-    } else {
-      Animation<EdgeInsets> layerAnimation = EdgeInsetsTween(
+    Animation<EdgeInsets> layerAnimation = EdgeInsetsTween(
         begin: EdgeInsets.only(bottom: _delegate.childHeight + 28.0),
         end: EdgeInsets.only(bottom: _size - 28.0),
       ).animate(_layerController.view);
@@ -210,7 +194,6 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
           child: widget.fab,
         ),
       );
-    }
   }
 
   @override
@@ -222,29 +205,6 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       begin: 1.0,
       end: 0.0,
     ).animate(_layerController.view);
-    List<Widget> stackChildren = widget.dockFab
-        ? <Widget>[
-            LayoutBuilder(builder: _buildFrontLayer),
-            LayoutBuilder(builder: _buildGestureDetectorContainer),
-            LayoutBuilder(builder: _buildFab),
-            Positioned(
-              bottom: 0.0,
-              left: 0.0,
-              right: 0.0,
-              child: LayoutBuilder(builder: _buildBottomBar),
-            ),
-          ]
-        : <Widget>[
-            Positioned(
-              bottom: 0.0,
-              left: 0.0,
-              right: 0.0,
-              child: LayoutBuilder(builder: _buildBottomBar),
-            ),
-            LayoutBuilder(builder: _buildFrontLayer),
-            LayoutBuilder(builder: _buildGestureDetectorContainer),
-            LayoutBuilder(builder: _buildFab),
-          ];
     return Stack(
       alignment: Alignment.bottomCenter,
       children: <Widget>[
@@ -262,10 +222,15 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
             ),
           ),
         ),
-        stackChildren[0],
-        stackChildren[1],
-        stackChildren[2],
-        stackChildren[3],
+        Positioned(
+          bottom: 0.0,
+          left: 0.0,
+          right: 0.0,
+          child: LayoutBuilder(builder: _buildBottomBar),
+        ),
+        LayoutBuilder(builder: _buildFrontLayer),
+        LayoutBuilder(builder: _buildGestureDetectorContainer),
+        LayoutBuilder(builder: _buildFab),
       ],
     );
   }

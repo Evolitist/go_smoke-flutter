@@ -45,8 +45,8 @@ class _AppState extends State<App> {
         toggleableActiveColor: Colors.orangeAccent[200],
         accentColor: Colors.orangeAccent[400],
       ),
-      home: Container(
-        color: isDark ? Colors.grey[850] : Colors.grey[50],
+      home: Material(
+        //color: isDark ? Colors.grey[850] : Colors.grey[50],
         child: HomePage(),
       ),
     );

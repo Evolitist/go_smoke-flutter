@@ -118,7 +118,6 @@ class _HomePageState extends State<HomePage> {
         tooltip: 'GO',
         child: Icon(Icons.smoking_rooms),
       ),
-      dockFab: false,
       settingsClick: () {
         Navigator.push(
           context,
