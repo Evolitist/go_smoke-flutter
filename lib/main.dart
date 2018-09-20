@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'pages/home.dart';
 import 'services/fcm.dart';
 import 'services/prefs.dart';
-import 'pages/home.dart';
 
 void main() async {
   await Prefs.build();
@@ -22,9 +22,15 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    _prefs<bool>('isDark', (value) => setState(() {
-      _brightness = value ? Brightness.dark : Brightness.light;
-    }), false);
+    _prefs<bool>(
+      'isDark',
+      (value) {
+        setState(() {
+          _brightness = value ? Brightness.dark : Brightness.light;
+        });
+      },
+      defaultValue: false,
+    );
   }
 
   @override
@@ -39,7 +45,10 @@ class _AppState extends State<App> {
         toggleableActiveColor: Colors.orangeAccent[200],
         accentColor: Colors.orangeAccent[400],
       ),
-      home: HomePage(),
+      home: Container(
+        color: isDark ? Colors.grey[850] : Colors.grey[50],
+        child: HomePage(),
+      ),
     );
   }
 }

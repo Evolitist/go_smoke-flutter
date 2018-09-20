@@ -18,4 +18,8 @@ class Location {
       return none();
     }
   }
+
+  Future<Position> getLastKnownPosition() async {
+    return await _location.getLastKnownPosition();
+  }
 }

@@ -56,12 +56,12 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       value: 1.0,
       vsync: this,
     );
-    widget.fabTrigger.addListener(_toggleFab);
+    widget.fabTrigger?.addListener(_toggleFab);
   }
 
   @override
   void dispose() {
-    widget.fabTrigger.removeListener(_toggleFab);
+    widget.fabTrigger?.removeListener(_toggleFab);
     _layerController.dispose();
     _fabController.dispose();
     super.dispose();
@@ -137,13 +137,9 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
         elevation: widget.dockFab ? 2.0 : widget.fab.elevation,
         shape:
             widget.dockFab ? BottomNotchedShape(notchRadius: 0.0) : _layerShape,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Expanded(
-              child: widget.frontLayer,
-            ),
-          ],
+        child: ClipPath(
+          clipper: BottomNotchedClipper(),
+          child: widget.frontLayer,
         ),
       ),
     );

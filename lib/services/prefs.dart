@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class Prefs {
   static final Prefs _singleton = Prefs._();
   final Map<String, ValueNotifier<dynamic>> _listeners = Map();
+  final Map<String, List<VoidCallback>> _events = Map();
   SharedPreferences _prefs;
 
   Prefs._();
@@ -25,11 +26,12 @@ class Prefs {
   void _checkListener<T>(String key, T value) {
     if (!_listeners.containsKey(key)) {
       _listeners[key] = ValueNotifier(value);
+      _events[key] = List(1);
       _set(key, value);
     }
   }
 
-  T get<T>(String key, [T defaultValue]) {
+  T get<T>(String key, {T defaultValue}) {
     _checkListener<T>(key, defaultValue);
     return _listeners[key].value;
   }
@@ -44,13 +46,23 @@ class Prefs {
 
   void operator []=(String key, dynamic value) => set(key, value);
 
-  void listen<T>(String key, ValueChanged<T> listener, [T defaultValue]) {
+  void listen<T>(String key, ValueChanged<T> listener, {int uid: 0, T defaultValue}) {
     _checkListener<T>(key, defaultValue);
-    _listeners[key].addListener(() => listener(_prefs.get(key)));
+    if (_events[key][uid] != null) {
+      _listeners[key].removeListener(_events[key][uid]);
+    }
+    _events[key][uid] = () => listener(_prefs.get(key));
+    _listeners[key].addListener(_events[key][uid]);
     listener(_listeners[key].value);
   }
 
-  call<T>(String key, ValueChanged<T> listener, [T defaultValue]) => listen(key, listener, defaultValue);
+  void stop(String key, [int uid = 0]) {
+    if (_listeners.containsKey(key) && _events[key][uid] != null) {
+      _listeners[key].removeListener(_events[key][uid]);
+    }
+  }
+
+  call<T>(String key, ValueChanged<T> listener, {int uid: 0, T defaultValue}) => listen(key, listener, uid: uid, defaultValue: defaultValue);
 
   void _set(String key, dynamic value) async {
     if (value is bool) {

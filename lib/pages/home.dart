@@ -1,12 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:go_smoke/backdrop.dart';
-import 'package:go_smoke/groups/chips.dart';
-import 'package:go_smoke/olc.dart';
-import 'package:go_smoke/services/location.dart';
-import 'package:go_smoke/utils.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong/latlong.dart';
 
+import '../backdrop.dart';
+import '../groups/chips.dart';
+import '../services/location.dart';
+import '../services/prefs.dart';
 import 'settings.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,9 +16,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final Trigger _fabTrigger = Trigger();
+  final Prefs _prefs = Prefs();
   final Location _location = Location();
-  String _currentCode = "";
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -39,75 +40,93 @@ class _HomePageState extends State<HomePage> {
         },
         (stream) {
           stream.listen((update) {
-            setState(() {
-              _currentCode = encode(
-                update.latitude,
-                update.longitude,
-                codeLength: 8,
-              );
-            });
+            _prefs['lastLoc'] = <String>[
+              update.latitude.toString(),
+              update.longitude.toString(),
+            ];
           });
         },
       );
     });
+    _prefs<List<String>>(
+      'lastLoc',
+      (a) {
+        if (_mapController.ready) {
+          _mapController.move(
+            LatLng(
+              double.tryParse(a[0]),
+              double.tryParse(a[1]),
+            ),
+            17.0,
+          );
+        }
+      },
+      defaultValue: ['0.0', '0.0'],
+    );
+  }
+
+  @override
+  void dispose() {
+    _prefs.stop('lastLoc');
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).canvasColor,
-      child: Backdrop(
-        frontLayer: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+    return Backdrop(
+      frontLayer: FlutterMap(
+        options: MapOptions(
+          zoom: 17.0,
+        ),
+        layers: <LayerOptions>[
+          TileLayerOptions(
+            urlTemplate: "https://api.mapbox.com/v4/"
+                "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+            additionalOptions: {
+              'accessToken':
+                  'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
+              'id': 'mapbox.streets',
+            },
+          ),
+        ],
+        mapController: _mapController,
+      ),
+      backLayer: Material(
+        elevation: 0.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(_currentCode),
-            RaisedButton(
-              onPressed: () {
-                _fabTrigger.fire();
-              },
-              child: Text('ANIMATE'),
+            ChoiceChipBlock(
+              //TODO: decide if we want chips or something else for this control
+              labelText: 'Cigarettes',
+              selected: 1,
+              names: <String>['none', '1', '2+'],
+            ),
+            Container(
+              height: 16.0,
+            ),
+            FilterChipBlock(
+              labelText: 'Groups',
+              names: ['one', 'two', 'three'],
             ),
           ],
         ),
-        backLayer: Material(
-          elevation: 0.0,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              ChoiceChipBlock(
-                //TODO: decide if we want chips or something else for this control
-                labelText: 'Cigarettes',
-                selected: 1,
-                names: <String>['none', '1', '2+'],
-              ),
-              Container(
-                height: 16.0,
-              ),
-              FilterChipBlock(
-                labelText: 'Groups',
-                names: ['one', 'two', 'three'],
-              ),
-            ],
-          ),
-        ),
-        fab: FloatingActionButton(
-          onPressed: () {},
-          tooltip: 'GO',
-          child: Icon(Icons.smoking_rooms),
-        ),
-        dockFab: false,
-        fabTrigger: _fabTrigger,
-        settingsClick: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SettingsPage(),
-            ),
-          );
-        },
       ),
+      fab: FloatingActionButton(
+        onPressed: () {},
+        tooltip: 'GO',
+        child: Icon(Icons.smoking_rooms),
+      ),
+      dockFab: false,
+      settingsClick: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SettingsPage(),
+          ),
+        );
+      },
     );
   }
 }
