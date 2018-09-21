@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'notifications.dart';
@@ -7,8 +8,11 @@ class FCM {
   final FirebaseMessaging _firebaseMessaging;
   final Notifications _notifications;
 
-  FCM() : _firebaseMessaging = FirebaseMessaging(),
-  _notifications = Notifications() {
+  FCM()
+      : _firebaseMessaging = FirebaseMessaging(),
+        _notifications = Notifications();
+
+  void init([ValueChanged<String> tokenCallback]) {
     _firebaseMessaging.requestNotificationPermissions(
       const IosNotificationSettings(
         sound: true,
@@ -35,6 +39,6 @@ class FCM {
         );
       },
     );
-    _firebaseMessaging.getToken().then((value) => print(value));
+    _firebaseMessaging.onTokenRefresh.listen(tokenCallback);
   }
 }

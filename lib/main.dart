@@ -31,6 +31,7 @@ class _AppState extends State<App> {
       },
       defaultValue: false,
     );
+    _fcm.init((s) => print(s));
   }
 
   @override
