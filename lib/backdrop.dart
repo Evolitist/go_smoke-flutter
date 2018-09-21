@@ -96,26 +96,23 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
   }
 
   Widget _buildBottomBar(BuildContext context, BoxConstraints constraints) {
-    return Material(
-      elevation: 0.0,
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          IconButton(
-            icon: AnimatedIcon(
-              icon: AnimatedIcons.close_menu,
-              progress: _layerController.view,
-            ),
-            onPressed: _toggleBackdropLayerVisibility,
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        IconButton(
+          icon: AnimatedIcon(
+            icon: AnimatedIcons.close_menu,
+            progress: _layerController.view,
           ),
-          Container(height: _size),
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: widget.settingsClick,
-          ),
-        ],
-      ),
+          onPressed: _toggleBackdropLayerVisibility,
+        ),
+        Container(height: _size),
+        IconButton(
+          icon: Icon(Icons.settings),
+          onPressed: widget.settingsClick,
+        ),
+      ],
     );
   }
 
@@ -184,16 +181,16 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
 
   Widget _buildFab(BuildContext context, BoxConstraints constraints) {
     Animation<EdgeInsets> layerAnimation = EdgeInsetsTween(
-        begin: EdgeInsets.only(bottom: _delegate.childHeight + 28.0),
-        end: EdgeInsets.only(bottom: _size - 28.0),
-      ).animate(_layerController.view);
-      return PaddingTransition(
-        padding: layerAnimation,
-        child: ScaleTransition(
-          scale: _fabController.view,
-          child: widget.fab,
-        ),
-      );
+      begin: EdgeInsets.only(bottom: _delegate.childHeight + 28.0),
+      end: EdgeInsets.only(bottom: _size - 28.0),
+    ).animate(_layerController.view);
+    return PaddingTransition(
+      padding: layerAnimation,
+      child: ScaleTransition(
+        scale: _fabController.view,
+        child: widget.fab,
+      ),
+    );
   }
 
   @override

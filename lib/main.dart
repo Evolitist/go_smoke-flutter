@@ -46,7 +46,6 @@ class _AppState extends State<App> {
         accentColor: Colors.orangeAccent[400],
       ),
       home: Material(
-        //color: isDark ? Colors.grey[850] : Colors.grey[50],
         child: HomePage(),
       ),
     );
