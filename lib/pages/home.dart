@@ -6,6 +6,7 @@ import 'package:latlong/latlong.dart';
 
 import '../backdrop.dart';
 import '../groups/chips.dart';
+import '../services/auth.dart';
 import '../services/location.dart';
 import '../services/prefs.dart';
 import 'settings.dart';
@@ -16,6 +17,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final Auth _auth = Auth();
   final Prefs _prefs = Prefs();
   final Location _location = Location();
   final MapController _mapController = MapController();
@@ -113,6 +115,16 @@ class _HomePageState extends State<HomePage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            Text(_auth.currentUser?.displayName ?? 'not logged in'),
+            RaisedButton(
+              child: Text('SIGN IN'),
+              onPressed: _auth.currentUser == null ? () async {
+                await _auth.googleSignIn();
+                setState(() {});
+              } : () async {
+                await _auth.signOut();
+              },
+            ),
             ChoiceChipBlock(
               //TODO: decide if we want chips or something else for this control
               labelText: 'Cigarettes',
