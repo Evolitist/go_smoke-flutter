@@ -17,6 +17,8 @@ class Auth {
 
   FirebaseUser get currentUser => _currentUser;
 
+  bool get signedIn => _currentUser != null;
+
   Future signOut() async {
     await _auth.signOut();
     _currentUser = null;

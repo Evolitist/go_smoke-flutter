@@ -17,6 +17,7 @@ class Backdrop extends StatefulWidget {
   final Widget backLayer;
   final FloatingActionButton fab;
   final VoidCallback settingsClick;
+  final VoidCallback accountClick;
   final Trigger fabTrigger;
 
   const Backdrop({
@@ -25,6 +26,7 @@ class Backdrop extends StatefulWidget {
     this.fab,
     this.fabTrigger,
     this.settingsClick,
+    this.accountClick,
   })  : assert(frontLayer != null),
         assert(backLayer != null);
 
@@ -93,27 +95,6 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
     } else {
       _fabController.fling(velocity: -_kFlingVelocity);
     }
-  }
-
-  Widget _buildBottomBar(BuildContext context, BoxConstraints constraints) {
-    return Row(
-      mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        IconButton(
-          icon: AnimatedIcon(
-            icon: AnimatedIcons.close_menu,
-            progress: _layerController.view,
-          ),
-          onPressed: _toggleBackdropLayerVisibility,
-        ),
-        Container(height: _size),
-        IconButton(
-          icon: Icon(Icons.settings),
-          onPressed: widget.settingsClick,
-        ),
-      ],
-    );
   }
 
   Widget _buildFrontLayer(BuildContext context, BoxConstraints constraints) {
@@ -221,7 +202,28 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
           bottom: 0.0,
           left: 0.0,
           right: 0.0,
-          child: LayoutBuilder(builder: _buildBottomBar),
+          child: Row(
+            children: <Widget>[
+              IconButton(
+                icon: AnimatedIcon(
+                  icon: AnimatedIcons.close_menu,
+                  progress: _layerController.view,
+                ),
+                onPressed: _toggleBackdropLayerVisibility,
+              ),
+              Expanded(
+                child: Container(height: _size),
+              ),
+              IconButton(
+                icon: Icon(Icons.person),
+                onPressed: widget.accountClick,
+              ),
+              IconButton(
+                icon: Icon(Icons.settings),
+                onPressed: widget.settingsClick,
+              ),
+            ],
+          ),
         ),
         LayoutBuilder(builder: _buildFrontLayer),
         LayoutBuilder(builder: _buildGestureDetectorContainer),

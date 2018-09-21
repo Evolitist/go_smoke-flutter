@@ -37,6 +37,7 @@ class _SettingsState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[isDark ? 850 : 50],
       appBar: AppBar(
         title: Text('Settings'),
       ),
