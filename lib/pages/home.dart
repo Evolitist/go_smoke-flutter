@@ -19,6 +19,7 @@ class _HomePageState extends State<HomePage> {
   final Prefs _prefs = Prefs();
   final Location _location = Location();
   final MapController _mapController = MapController();
+  LatLng _latLng = LatLng(0.0, 0.0);
 
   @override
   void initState() {
@@ -51,14 +52,11 @@ class _HomePageState extends State<HomePage> {
     _prefs<List<String>>(
       'lastLoc',
       (a) {
+        setState(() {
+          _latLng = LatLng(double.tryParse(a[0]), double.tryParse(a[1]));
+        });
         if (_mapController.ready) {
-          _mapController.move(
-            LatLng(
-              double.tryParse(a[0]),
-              double.tryParse(a[1]),
-            ),
-            17.0,
-          );
+          _mapController.move(_latLng, 17.0);
         }
       },
       defaultValue: ['0.0', '0.0'],
@@ -73,6 +71,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    String tileType = _prefs['isDark'] ? 'dark' : 'light';
     return Backdrop(
       frontLayer: FlutterMap(
         options: MapOptions(
@@ -85,8 +84,25 @@ class _HomePageState extends State<HomePage> {
             additionalOptions: {
               'accessToken':
                   'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
-              'id': 'mapbox.streets',
+              'id': 'mapbox.$tileType',
             },
+          ),
+          MarkerLayerOptions(
+            markers: [
+              Marker(
+                point: _latLng,
+                builder: (context) => Material(
+                      elevation: 4.0,
+                      shape: CircleBorder(
+                        side: BorderSide(color: Colors.white),
+                      ),
+                      color: Colors.blue,
+                    ),
+                width: 16.0,
+                height: 16.0,
+                anchor: AnchorPos.center,
+              ),
+            ],
           ),
         ],
         mapController: _mapController,
