@@ -26,7 +26,7 @@ class Prefs {
   void _checkListener<T>(String key, T value) {
     if (!_listeners.containsKey(key)) {
       _listeners[key] = ValueNotifier(value);
-      _events[key] = List(1);
+      _events[key] = List()..length = 1;
       _set(key, value);
     }
   }
