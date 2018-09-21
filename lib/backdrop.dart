@@ -126,11 +126,9 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       child: Material(
         animationDuration: Duration(milliseconds: 300),
         elevation: widget.fab.elevation,
+        clipBehavior: Clip.antiAlias,
         shape: _layerShape,
-        child: ClipPath(
-          clipper: BottomNotchedClipper(),
-          child: widget.frontLayer,
-        ),
+        child: widget.frontLayer,
       ),
     );
   }
