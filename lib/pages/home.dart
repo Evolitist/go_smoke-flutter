@@ -109,37 +109,36 @@ class _HomePageState extends State<HomePage> {
         ],
         mapController: _mapController,
       ),
-      backLayer: Material(
-        elevation: 0.0,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(_auth.currentUser?.displayName ?? 'not logged in'),
-            RaisedButton(
-              child: Text('SIGN IN'),
-              onPressed: _auth.currentUser == null ? () async {
-                await _auth.googleSignIn();
-                setState(() {});
-              } : () async {
-                await _auth.signOut();
-              },
-            ),
-            ChoiceChipBlock(
-              //TODO: decide if we want chips or something else for this control
-              labelText: 'Cigarettes',
-              selected: 1,
-              names: <String>['none', '1', '2+'],
-            ),
-            Container(
-              height: 16.0,
-            ),
-            FilterChipBlock(
-              labelText: 'Groups',
-              names: ['one', 'two', 'three'],
-            ),
-          ],
-        ),
+      backLayer: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(_auth.currentUser?.displayName ?? 'not logged in'),
+          RaisedButton(
+            child: Text('SIGN IN'),
+            onPressed: _auth.currentUser == null
+                ? () async {
+                    await _auth.googleSignIn();
+                    setState(() {});
+                  }
+                : () async {
+                    await _auth.signOut();
+                  },
+          ),
+          ChoiceChipBlock(
+            //TODO: decide if we want chips or something else for this control
+            labelText: 'Cigarettes',
+            selected: 1,
+            names: <String>['none', '1', '2+'],
+          ),
+          Container(
+            height: 16.0,
+          ),
+          FilterChipBlock(
+            labelText: 'Groups',
+            names: ['one', 'two', 'three'],
+          ),
+        ],
       ),
       fab: FloatingActionButton(
         onPressed: () {},

@@ -1,12 +1,15 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class Notifications {
-  final FlutterLocalNotificationsPlugin _notifications;
+  static final Notifications _singleton = Notifications._();
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
 
-  Notifications([String iconName = 'ic_notification'])
-      : _notifications = FlutterLocalNotificationsPlugin() {
+  factory Notifications() => _singleton;
+
+  Notifications._() {
     _notifications.initialize(InitializationSettings(
-      AndroidInitializationSettings(iconName),
+      AndroidInitializationSettings('ic_notification'),
       IOSInitializationSettings(),
     ));
   }

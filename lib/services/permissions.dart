@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 
 class Permissions {
-  final PermissionHandler _handler;
+  static final Permissions _singleton = Permissions._();
+  final PermissionHandler _handler = PermissionHandler();
 
-  Permissions() : _handler = PermissionHandler();
+  factory Permissions() => _singleton;
+
+  Permissions._();
 
   Future<bool> requestLocationPermissions(
       [bool countRestricted = false]) async {

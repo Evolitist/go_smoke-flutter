@@ -6,10 +6,13 @@ import 'package:geolocator/geolocator.dart';
 import 'permissions.dart';
 
 class Location {
-  final Geolocator _location;
-  final Permissions _permissions;
+  static final Location _singleton = Location._();
+  final Geolocator _location = Geolocator();
+  final Permissions _permissions = Permissions();
 
-  Location() : _location = Geolocator(), _permissions = Permissions();
+  factory Location() => _singleton;
+
+  Location._();
 
   Future<Option<Stream<Position>>> getLocationStream() async {
     if (await _permissions.requestLocationPermissions()) {

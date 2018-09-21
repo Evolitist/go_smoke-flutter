@@ -5,12 +5,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'notifications.dart';
 
 class FCM {
-  final FirebaseMessaging _firebaseMessaging;
-  final Notifications _notifications;
+  static final FCM _singleton = FCM._();
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  final Notifications _notifications = Notifications();
 
-  FCM()
-      : _firebaseMessaging = FirebaseMessaging(),
-        _notifications = Notifications();
+  factory FCM() => _singleton;
+
+  FCM._();
 
   void init([ValueChanged<String> tokenCallback]) {
     _firebaseMessaging.requestNotificationPermissions(
