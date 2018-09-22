@@ -26,7 +26,7 @@ class Auth {
 
   Future googleSignIn() async {
     GoogleSignInAccount googleUser =
-        await (_googleAuth.signInSilently() ?? _googleAuth.signIn());
+        await _googleAuth.signInSilently() ??  await _googleAuth.signIn();
     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
     if (await _auth.currentUser() == null) {
       _currentUser = await _auth.signInWithGoogle(
