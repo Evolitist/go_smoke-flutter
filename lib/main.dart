@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pages/home.dart';
+import 'pages/settings.dart';
 import 'services/fcm.dart';
 import 'services/prefs.dart';
 
@@ -45,12 +46,11 @@ class _AppState extends State<App> {
         primaryColor: isDark ? null : Colors.white,
         toggleableActiveColor: Colors.orangeAccent[200],
         accentColor: Colors.orangeAccent[400],
-        canvasColor: Colors.transparent,
       ),
-      home: Material(
-        color: Colors.grey[isDark ? 850 : 50],
-        child: HomePage(),
-      ),
+      routes: {
+        '/': (ctx) => HomePage(),
+        '/settings': (ctx) => SettingsPage(),
+      },
     );
   }
 }

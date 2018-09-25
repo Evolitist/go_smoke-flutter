@@ -10,6 +10,7 @@ dependencies:
   cupertino_icons: ^0.1.2
   dartz: ^0.8.0
   shared_preferences: ^0.4.2
+  cached_network_image: ^0.4.2
   permission_handler: ^2.0.0
   google_sign_in: ^3.0.5
   firebase_auth: ^0.5.20

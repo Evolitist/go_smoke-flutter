@@ -2,11 +2,10 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:meta/meta.dart';
 
-import 'shapes.dart';
-import 'transitions.dart';
-import 'utils.dart';
+import '../shapes.dart';
+import '../transitions.dart';
+import '../utils.dart';
 
 const double _kFlingVelocity = 2.0;
 const double _kAppBarSizePortrait = 56.0;
@@ -15,6 +14,7 @@ const double _kAppBarSizeLandscape = 48.0;
 class Backdrop extends StatefulWidget {
   final Widget frontLayer;
   final Widget backLayer;
+  final Widget bottomSheet;
   final FloatingActionButton fab;
   final VoidCallback settingsClick;
   final VoidCallback accountClick;
@@ -23,6 +23,7 @@ class Backdrop extends StatefulWidget {
   const Backdrop({
     @required this.frontLayer,
     @required this.backLayer,
+    this.bottomSheet,
     this.fab,
     this.fabTrigger,
     this.settingsClick,
@@ -38,7 +39,9 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
   final SizeSavingDelegate _delegate = SizeSavingDelegate();
   AnimationController _layerController;
   AnimationController _fabController;
+  AnimationController _bottomSheetController;
   ShapeBorder _layerShape = BottomNotchedShape();
+  bool _bottomSheetVisible = false;
   double _size;
   double _dragOffset;
 
@@ -55,6 +58,14 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       value: 1.0,
       vsync: this,
     );
+    _bottomSheetController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    )..addStatusListener((status) {
+      setState(() {
+        _bottomSheetVisible = status != AnimationStatus.dismissed;
+      });
+    });
     widget.fabTrigger?.addListener(_toggleFab);
   }
 
@@ -95,6 +106,11 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
     } else {
       _fabController.fling(velocity: -_kFlingVelocity);
     }
+  }
+
+  void _toggleBottomSheetVisibility() {
+    _bottomSheetController.fling(
+        velocity: _bottomSheetVisible ? -_kFlingVelocity : _kFlingVelocity);
   }
 
   Widget _buildFrontLayer(BuildContext context, BoxConstraints constraints) {
@@ -181,54 +197,78 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       begin: 1.0,
       end: 0.0,
     ).animate(_layerController.view);
-    return Stack(
-      alignment: Alignment.bottomCenter,
-      children: <Widget>[
-        FadeTransition(
-          opacity: backAnimation,
-          child: CustomSingleChildLayout(
-            delegate: _delegate,
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: 16.0,
-                right: 16.0,
-                bottom: _size,
+    Animation<Offset> bottomSheetAnimation = Tween<Offset>(
+      begin: Offset(0.0, 1.0),
+      end: Offset.zero,
+    ).animate(_bottomSheetController.view);
+    return Material(
+      elevation: 0.0,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: <Widget>[
+          FadeTransition(
+            opacity: backAnimation,
+            child: CustomSingleChildLayout(
+              delegate: _delegate,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: _size,
+                ),
+                child: widget.backLayer,
               ),
-              child: widget.backLayer,
             ),
           ),
-        ),
-        Positioned(
-          bottom: 0.0,
-          left: 0.0,
-          right: 0.0,
-          child: Row(
-            children: <Widget>[
-              IconButton(
-                icon: AnimatedIcon(
-                  icon: AnimatedIcons.close_menu,
-                  progress: _layerController.view,
+          Positioned(
+            bottom: 0.0,
+            left: 0.0,
+            right: 0.0,
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  icon: AnimatedIcon(
+                    icon: AnimatedIcons.close_menu,
+                    progress: _layerController.view,
+                  ),
+                  onPressed: _toggleBackdropLayerVisibility,
                 ),
-                onPressed: _toggleBackdropLayerVisibility,
-              ),
-              Expanded(
-                child: Container(height: _size),
-              ),
-              IconButton(
-                icon: Icon(Icons.person),
-                onPressed: widget.accountClick,
-              ),
-              IconButton(
-                icon: Icon(Icons.settings),
-                onPressed: widget.settingsClick,
-              ),
-            ],
+                Expanded(
+                  child: Container(height: _size),
+                ),
+                IconButton(
+                  icon: Icon(Icons.person),
+                  onPressed: () => _toggleBottomSheetVisibility(),
+                ),
+                IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: widget.settingsClick,
+                ),
+              ],
+            ),
           ),
-        ),
-        LayoutBuilder(builder: _buildFrontLayer),
-        LayoutBuilder(builder: _buildGestureDetectorContainer),
-        LayoutBuilder(builder: _buildFab),
-      ],
+          LayoutBuilder(builder: _buildFrontLayer),
+          LayoutBuilder(builder: _buildGestureDetectorContainer),
+          LayoutBuilder(builder: _buildFab),
+          FadeTransition(
+            opacity: _bottomSheetController.view,
+            child: IgnorePointer(
+              ignoring: !_bottomSheetVisible,
+              child: Container(
+                color: Colors.black.withAlpha(192),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _toggleBottomSheetVisibility,
+                ),
+              ),
+            ),
+          ),
+          SlideTransition(
+            position: bottomSheetAnimation,
+            child: widget.bottomSheet,
+          ),
+        ],
+      ),
     );
   }
 }
