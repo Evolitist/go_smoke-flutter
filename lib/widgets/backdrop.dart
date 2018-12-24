@@ -62,10 +62,10 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       duration: Duration(milliseconds: 300),
       vsync: this,
     )..addStatusListener((status) {
-      setState(() {
-        _bottomSheetVisible = status != AnimationStatus.dismissed;
+        setState(() {
+          _bottomSheetVisible = status != AnimationStatus.dismissed;
+        });
       });
-    });
     widget.fabTrigger?.addListener(_toggleFab);
   }
 
@@ -201,73 +201,81 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
       begin: Offset(0.0, 1.0),
       end: Offset.zero,
     ).animate(_bottomSheetController.view);
-    return Material(
-      elevation: 0.0,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: <Widget>[
-          FadeTransition(
-            opacity: backAnimation,
-            child: CustomSingleChildLayout(
-              delegate: _delegate,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 16.0,
-                  right: 16.0,
-                  bottom: _size,
-                ),
-                child: widget.backLayer,
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0.0,
-            left: 0.0,
-            right: 0.0,
-            child: Row(
-              children: <Widget>[
-                IconButton(
-                  icon: AnimatedIcon(
-                    icon: AnimatedIcons.close_menu,
-                    progress: _layerController.view,
+    return WillPopScope(
+      onWillPop: () {
+        if (_bottomSheetVisible) {
+          _toggleBottomSheetVisibility();
+          return Future.value(false);
+        } else return Future.value(true);
+      },
+      child: Material(
+        elevation: 0.0,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: <Widget>[
+            FadeTransition(
+              opacity: backAnimation,
+              child: CustomSingleChildLayout(
+                delegate: _delegate,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                    bottom: _size,
                   ),
-                  onPressed: _toggleBackdropLayerVisibility,
-                ),
-                Expanded(
-                  child: Container(height: _size),
-                ),
-                IconButton(
-                  icon: Icon(Icons.person),
-                  onPressed: () => _toggleBottomSheetVisibility(),
-                ),
-                IconButton(
-                  icon: Icon(Icons.settings),
-                  onPressed: widget.settingsClick,
-                ),
-              ],
-            ),
-          ),
-          LayoutBuilder(builder: _buildFrontLayer),
-          LayoutBuilder(builder: _buildGestureDetectorContainer),
-          LayoutBuilder(builder: _buildFab),
-          FadeTransition(
-            opacity: _bottomSheetController.view,
-            child: IgnorePointer(
-              ignoring: !_bottomSheetVisible,
-              child: Container(
-                color: Colors.black.withAlpha(192),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _toggleBottomSheetVisibility,
+                  child: widget.backLayer,
                 ),
               ),
             ),
-          ),
-          SlideTransition(
-            position: bottomSheetAnimation,
-            child: widget.bottomSheet,
-          ),
-        ],
+            Positioned(
+              bottom: 0.0,
+              left: 0.0,
+              right: 0.0,
+              child: Row(
+                children: <Widget>[
+                  IconButton(
+                    icon: AnimatedIcon(
+                      icon: AnimatedIcons.close_menu,
+                      progress: _layerController.view,
+                    ),
+                    onPressed: _toggleBackdropLayerVisibility,
+                  ),
+                  Expanded(
+                    child: Container(height: _size),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.person),
+                    onPressed: () => _toggleBottomSheetVisibility(),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.settings),
+                    onPressed: widget.settingsClick,
+                  ),
+                ],
+              ),
+            ),
+            LayoutBuilder(builder: _buildFrontLayer),
+            LayoutBuilder(builder: _buildGestureDetectorContainer),
+            LayoutBuilder(builder: _buildFab),
+            FadeTransition(
+              opacity: _bottomSheetController.view,
+              child: IgnorePointer(
+                ignoring: !_bottomSheetVisible,
+                child: Container(
+                  color: Colors.black.withAlpha(192),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggleBottomSheetVisibility,
+                  ),
+                ),
+              ),
+            ),
+            SlideTransition(
+              position: bottomSheetAnimation,
+              child: widget.bottomSheet,
+            ),
+          ],
+        ),
       ),
     );
   }

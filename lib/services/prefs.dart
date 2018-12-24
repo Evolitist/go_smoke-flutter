@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Prefs {
   static final Prefs _singleton = Prefs._();
-  final Map<String, ValueNotifier<dynamic>> _listeners = Map();
-  final Map<String, List<VoidCallback>> _events = Map();
+  final Map<String, ValueNotifier<dynamic>> _notifiers = Map();
+  final Map<String, List<VoidCallback>> _callbacks = Map();
   SharedPreferences _prefs;
 
   Prefs._();
@@ -24,16 +24,15 @@ class Prefs {
   }
 
   void _checkListener<T>(String key, T value) {
-    if (!_listeners.containsKey(key)) {
-      _listeners[key] = ValueNotifier(value);
-      _events[key] = List()..length = 1;
-      _set(key, value);
+    if (!_notifiers.containsKey(key)) {
+      _notifiers[key] = ValueNotifier(value);
+      _callbacks[key] = List()..length = 1;
     }
   }
 
   T get<T>(String key, {T defaultValue}) {
     _checkListener<T>(key, defaultValue);
-    return _listeners[key].value;
+    return _notifiers[key].value;
   }
 
   dynamic operator [](String key) => get(key);
@@ -41,24 +40,26 @@ class Prefs {
   void set<T>(String key, T value) {
     _checkListener<T>(key, value);
     _set(key, value);
-    _listeners[key].value = value;
+    _notifiers[key].value = value;
   }
 
   void operator []=(String key, dynamic value) => set(key, value);
 
   void listen<T>(String key, ValueChanged<T> listener, {int uid: 0, T defaultValue}) {
-    _checkListener<T>(key, defaultValue);
-    if (_events[key][uid] != null) {
-      _listeners[key].removeListener(_events[key][uid]);
+    dynamic _defValue = _prefs.get(key);
+    dynamic defValue = _defValue is List ? _defValue.cast<String>() : _defValue;
+    _checkListener<T>(key, defValue ?? defaultValue);
+    if (_callbacks[key][uid] != null) {
+      _notifiers[key].removeListener(_callbacks[key][uid]);
     }
-    _events[key][uid] = () => listener(_prefs.get(key));
-    _listeners[key].addListener(_events[key][uid]);
-    listener(_listeners[key].value);
+    _callbacks[key][uid] = () => listener(_prefs.get(key));
+    _notifiers[key].addListener(_callbacks[key][uid]);
+    listener(_notifiers[key].value);
   }
 
   void stop(String key, [int uid = 0]) {
-    if (_listeners.containsKey(key) && _events[key][uid] != null) {
-      _listeners[key].removeListener(_events[key][uid]);
+    if (_notifiers.containsKey(key) && _callbacks[key][uid] != null) {
+      _notifiers[key].removeListener(_callbacks[key][uid]);
     }
   }
 
@@ -66,15 +67,15 @@ class Prefs {
 
   void _set(String key, dynamic value) async {
     if (value is bool) {
-      _prefs.setBool(key, value);
+      await _prefs.setBool(key, value);
     } else if (value is int) {
-      _prefs.setInt(key, value);
+      await _prefs.setInt(key, value);
     } else if (value is double) {
-      _prefs.setDouble(key, value);
+      await _prefs.setDouble(key, value);
     } else if (value is String) {
-      _prefs.setString(key, value);
+      await _prefs.setString(key, value);
     } else if (value is List<String>) {
-      _prefs.setStringList(key, value);
+      await _prefs.setStringList(key, value);
     } else if (value != null) {
       throw Exception('Unsupported preference type ${value.runtimeType}');
     }

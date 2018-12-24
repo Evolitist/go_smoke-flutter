@@ -4,11 +4,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+enum AuthProvider {
+  google,
+}
+
+enum AuthState {
+  none,
+  inProgress,
+  signedIn
+}
+
 class Auth {
   static final Auth _singleton = Auth._();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleAuth = GoogleSignIn();
   final ValueNotifier<FirebaseUser> _currentUser = ValueNotifier(null);
+  final ValueNotifier<AuthState> _state = ValueNotifier(AuthState.none);
 
   factory Auth() => _singleton;
 
@@ -22,12 +33,16 @@ class Auth {
 
   void addCallback(VoidCallback callback) => _currentUser.addListener(callback);
 
+  bool get inProgress => _state.value == AuthState.inProgress;
+
   Future signOut() async {
     await _auth.signOut();
     _currentUser.value = null;
+    _state.value = AuthState.none;
   }
 
   Future googleSignIn() async {
+    _state.value = AuthState.inProgress;
     GoogleSignInAccount googleUser =
         await _googleAuth.signInSilently() ?? await _googleAuth.signIn();
     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -36,13 +51,12 @@ class Auth {
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      print('signed in ' + _currentUser.value.displayName);
     } else {
       _currentUser.value = await _auth.linkWithGoogleCredential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      print('linked Google to ' + _currentUser.value.displayName);
     }
+    _state.value = AuthState.signedIn;
   }
 }

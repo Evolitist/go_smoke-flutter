@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth.dart';
+import '../widgets/user_avatar.dart';
 
 class UserCard extends StatefulWidget {
   @override
@@ -22,55 +22,47 @@ class _UserCardState extends State<UserCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            CircleAvatar(
+      child: FractionallySizedBox(
+        widthFactor: 2.0 / 3.0,
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              UserAvatar(
                 radius: 48.0,
-                backgroundImage: _auth.signedIn
-                    ? CachedNetworkImageProvider(_auth.currentUser.photoUrl)
-                    : null,
-                child: _auth.signedIn
+                photoUrl: _auth.currentUser?.photoUrl,
+                inProgress: _auth.inProgress,
+              ),
+              SizedBox(height: 16.0),
+              Text(
+                _auth.currentUser?.displayName ?? '',
+                style: Theme.of(context).textTheme.title,
+              ),
+              SizedBox(height: 16.0),
+              RaisedButton(
+                child: Text(_auth.inProgress
+                    ? '...'
+                    : (_auth.signedIn ? 'SIGN OUT' : 'SIGN IN')),
+                shape: StadiumBorder(),
+                onPressed: _auth.inProgress
                     ? null
-                    : LayoutBuilder(
-                        builder: (ctx, size) => Icon(
-                              Icons.person_outline,
-                              size: size.biggest.width / 2.0,
-                              color: Colors.grey[850],
-                            ),
-                      )),
-            SizedBox(width: 16.0),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  _auth.currentUser?.displayName ?? '',
-                  style: Theme.of(context).textTheme.title,
-                ),
-                OutlineButton(
-                  child: Text(_auth.signedIn ? 'SIGN OUT' : 'SIGN IN'),
-                  onPressed: _auth.signedIn
-                      ? () async {
-                          Future task = _auth.signOut();
-                          setState(() {});
-                          await task;
-                          setState(() {});
-                        }
-                      : () async {
-                          Future task = _auth.googleSignIn();
-                          setState(() {});
-                          await task;
-                          setState(() {});
-                        },
-                ),
-              ],
-            ),
-          ],
+                    : (_auth.signedIn
+                    ? () async {
+                  _auth.signOut();
+                  setState(() {});
+                }
+                    : () async {
+                  Future task = _auth.googleSignIn();
+                  setState(() {});
+                  await task;
+                }),
+              ),
+            ],
+          ),
         ),
-      ),
+      )
     );
   }
 }

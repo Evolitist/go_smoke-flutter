@@ -16,7 +16,7 @@ class Location {
 
   Future<Option<Stream<Position>>> getLocationStream() async {
     if (await _permissions.requestLocationPermissions()) {
-      return some(await _location.getPositionStream());
+      return some(_location.getPositionStream());
     } else {
       return none();
     }

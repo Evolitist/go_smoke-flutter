@@ -48,6 +48,7 @@ class _MapboxMapState extends State<MapboxMap> {
         TileLayerOptions(
           urlTemplate: "https://api.mapbox.com/v4/"
               "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+          backgroundColor: Theme.of(context).canvasColor,
           additionalOptions: {
             'accessToken':
                 'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
