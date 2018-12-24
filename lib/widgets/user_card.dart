@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../services/auth.dart';
@@ -49,20 +47,19 @@ class _UserCardState extends State<UserCard> {
                 onPressed: _auth.inProgress
                     ? null
                     : (_auth.signedIn
-                    ? () async {
-                  _auth.signOut();
-                  setState(() {});
-                }
-                    : () async {
-                  Future task = _auth.googleSignIn();
-                  setState(() {});
-                  await task;
-                }),
+                        ? () async {
+                            _auth.signOut();
+                            setState(() {});
+                          }
+                        : () async {
+                            _auth.googleSignIn();
+                            setState(() {});
+                          }),
               ),
             ],
           ),
         ),
-      )
+      ),
     );
   }
 }

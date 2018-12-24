@@ -17,34 +17,33 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final Prefs _prefs = Prefs();
   final Location _location = Location();
+  bool _gotStreamUpdate = false;
 
   @override
   void initState() {
     super.initState();
-    _location.getLocationStream().then((option) {
-      option.cata(
-        () {
+    _location.getLocationStream().then((stream) {
+      stream.listen((update) {
+        _gotStreamUpdate = true;
+        _prefs['lastLoc'] = <String>[
+          update.latitude.toString(),
+          update.longitude.toString(),
+        ];
+      }).onDone(() {
+        if (!_gotStreamUpdate) {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-                  title: Text('Permissions error'),
-                  content:
-                      Text('Location permission is reqired for app to work.'),
-                  actions: <Widget>[
-                    FlatButton(onPressed: () => exit(0), child: Text('OK')),
-                  ],
-                ),
+              title: Text('Permissions error'),
+              content:
+              Text('Location permission is reqired for app to work.'),
+              actions: <Widget>[
+                FlatButton(onPressed: () => exit(0), child: Text('OK')),
+              ],
+            ),
           );
-        },
-        (stream) {
-          stream.listen((update) {
-            _prefs['lastLoc'] = <String>[
-              update.latitude.toString(),
-              update.longitude.toString(),
-            ];
-          });
-        },
-      );
+        }
+      });
     });
   }
 

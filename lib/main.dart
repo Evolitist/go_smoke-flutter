@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'pages/home.dart';
@@ -43,13 +44,17 @@ class _AppState extends State<App> {
       theme: ThemeData(
         primarySwatch: Colors.orange,
         brightness: _brightness,
-        primaryColor: isDark ? null : Colors.white,
+        primaryColor: isDark ? null : Colors.grey[900],
         toggleableActiveColor: Colors.orangeAccent[200],
         accentColor: Colors.orangeAccent[400],
       ),
-      routes: {
-        '/': (ctx) => HomePage(),
-        '/settings': (ctx) => SettingsPage(),
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (ctx) => HomePage());
+          case '/settings':
+            return CupertinoPageRoute(builder: (ctx) => SettingsPage());
+        }
       },
     );
   }

@@ -40,40 +40,49 @@ class _MapboxMapState extends State<MapboxMap> {
   @override
   Widget build(BuildContext context) {
     String tileType = _prefs['isDark'] ? 'dark' : 'light';
-    return FlutterMap(
-      options: MapOptions(
-        zoom: 17.0,
-      ),
-      layers: <LayerOptions>[
-        TileLayerOptions(
-          urlTemplate: "https://api.mapbox.com/v4/"
-              "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
-          backgroundColor: Theme.of(context).canvasColor,
-          additionalOptions: {
-            'accessToken':
+    return Stack(
+      children: <Widget>[
+        FlutterMap(
+          options: MapOptions(
+            center: _latLng,
+            zoom: 17.0,
+            interactive: false,
+          ),
+          layers: <LayerOptions>[
+            TileLayerOptions(
+              urlTemplate: "https://api.mapbox.com/v4/"
+                  "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+              backgroundColor: _prefs['isDark'] ? Color(0xff111111) : Color(0xffeeeeee),
+              additionalOptions: {
+                'accessToken':
                 'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
-            'id': 'mapbox.$tileType',
-          },
-        ),
-        MarkerLayerOptions(
-          markers: <Marker>[
-            Marker(
-              point: _latLng,
-              builder: (context) => Material(
+                'id': 'mapbox.$tileType',
+              },
+            ),
+            MarkerLayerOptions(
+              markers: <Marker>[
+                Marker(
+                  point: _latLng,
+                  builder: (context) => Material(
                     elevation: 4.0,
                     shape: CircleBorder(
                       side: BorderSide(color: Colors.white),
                     ),
                     color: Colors.blue,
                   ),
-              width: 16.0,
-              height: 16.0,
-              anchor: AnchorPos.center,
+                  width: 16.0,
+                  height: 16.0,
+                  anchor: AnchorPos.center,
+                ),
+              ],
             ),
           ],
+          mapController: _mapController,
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
         ),
       ],
-      mapController: _mapController,
     );
   }
 }

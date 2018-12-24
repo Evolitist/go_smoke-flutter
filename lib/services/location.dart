@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dartz/dartz.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'permissions.dart';
@@ -14,11 +13,11 @@ class Location {
 
   Location._();
 
-  Future<Option<Stream<Position>>> getLocationStream() async {
+  Future<Stream<Position>> getLocationStream() async {
     if (await _permissions.requestLocationPermissions()) {
-      return some(_location.getPositionStream());
+      return _location.getPositionStream();
     } else {
-      return none();
+      return Stream.empty();
     }
   }
 
