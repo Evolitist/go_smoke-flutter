@@ -66,33 +66,55 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: Text('Enter phone number'),
-          content: TextField(
-            autofocus: true,
-            keyboardType: TextInputType.phone,
-            controller: _inputController,
-          ),
-          actions: <Widget>[
-            FlatButton(
-              child: Text('CANCEL'),
-              onPressed: () {
-                _fadeController.reverse();
-                Navigator.of(ctx).pop();
-              },
-            ),
-            FlatButton(
-              child: Text('VERIFY'),
-              onPressed: () {
-                _auth.startPhoneSignIn(_inputController.text, () {
-                  Navigator.of(context).pop();
-                });
-                _inputController.text = '';
-                Navigator.of(ctx).pop();
-                _phoneVerify(context);
-              },
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              title: Text('Enter phone number'),
+              content: TextField(
+                autofocus: true,
+                keyboardType: TextInputType.phone,
+                enabled: !_auth.inProgress,
+                controller: _inputController,
+              ),
+              actions: <Widget>[
+                FlatButton(
+                  child: Text('CANCEL'),
+                  onPressed: () {
+                    _fadeController.reverse();
+                    Navigator.of(context).pop();
+                  },
+                ),
+                FlatButton(
+                  child: _auth.inProgress
+                      ? SizedBox(
+                          width: Theme.of(context).buttonTheme.height - 4.0,
+                          height: Theme.of(context).buttonTheme.height - 4.0,
+                          child: CircularProgressIndicator(),
+                        )
+                      : Text('VERIFY'),
+                  onPressed: _auth.inProgress
+                      ? null
+                      : () {
+                          _auth.startPhoneSignIn(
+                            phoneNumber: _inputController.text,
+                            onCodeSent: () {
+                              _inputController.text = '';
+                              Navigator.of(context).pop();
+                              _phoneVerify(context);
+                            },
+                            onSuccess: () {
+                              Navigator.of(context).pop();
+                            },
+                            onError: () {
+                              Navigator.of(context).pop();
+                            },
+                          );
+                          setState(() {});
+                        },
+                ),
+              ],
+            );
+          },
         );
       },
     );

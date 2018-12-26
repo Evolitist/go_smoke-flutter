@@ -58,7 +58,7 @@ class Auth {
     _state.value = AuthState.signedIn;
   }
 
-  Future startPhoneSignIn(String phoneNumber, VoidCallback onSuccess) async {
+  Future startPhoneSignIn({String phoneNumber, VoidCallback onCodeSent, VoidCallback onSuccess, VoidCallback onError,}) async {
     _state.value = AuthState.inProgress;
     _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
@@ -69,11 +69,15 @@ class Auth {
         onSuccess();
       },
       verificationFailed: (exception) {
-        print(exception);
-        _state.value = AuthState.none;
+        print('${exception.code}: ${exception.message}');
+        if (_state.value == AuthState.inProgress) {
+          _state.value = AuthState.none;
+          onError();
+        }
       },
       codeSent: (vId, [force]) {
         _verificationId = vId;
+        onCodeSent();
       },
       codeAutoRetrievalTimeout: (vId) {},
     );
