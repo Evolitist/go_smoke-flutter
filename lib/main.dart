@@ -38,15 +38,18 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = _brightness == Brightness.dark;
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.orange,
         brightness: _brightness,
-        primaryColor: isDark ? null : Colors.grey[900],
+        primaryColor: Colors.grey[900],
         toggleableActiveColor: Colors.orangeAccent[200],
         accentColor: Colors.orangeAccent[400],
+        buttonTheme: ButtonThemeData(
+          minWidth: 40.0,
+          height: 40.0,
+        ),
       ),
       onGenerateRoute: (settings) {
         switch (settings.name) {
