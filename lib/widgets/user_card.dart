@@ -15,6 +15,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
   AnimationController _fadeController;
   TextEditingController _inputController;
   String _photoUrl;
+  String _displayName;
 
   @override
   void initState() {
@@ -27,6 +28,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
     _auth.addCallback(() => setState(() {
           _fadeController.reverse();
           _photoUrl = _auth.currentUser?.photoUrl;
+          _displayName = _auth.currentUser?.displayName;
         }));
   }
 
@@ -106,6 +108,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
                               Navigator.of(context).pop();
                             },
                             onError: () {
+                              _fadeController.reverse();
                               Navigator.of(context).pop();
                             },
                           );
@@ -120,15 +123,94 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
     );
   }
 
+  void _editProfile(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String newName;
+        return Form(
+          autovalidate: true,
+          child: LayoutBuilder(builder: (ctx, constraints) {
+            return AlertDialog(
+              title: Text('Edit profile'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  TextFormField(
+                    initialValue: _auth.currentUser?.displayName,
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (displayName) {
+                      return displayName.isEmpty
+                          ? 'Please enter your (nick)name'
+                          : null;
+                    },
+                    onSaved: (value) {
+                      newName = value;
+                    },
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                FlatButton(
+                  child: Text('CANCEL'),
+                  onPressed: () {
+                    Form.of(ctx).reset();
+                    Navigator.of(context).pop();
+                  },
+                ),
+                FlatButton(
+                  child: Text('UPDATE'),
+                  onPressed: () async {
+                    if (Form.of(ctx).validate()) {
+                      Form.of(ctx).save();
+                      await _auth.updateUserProfile(displayName: newName);
+                      Navigator.of(context).pop();
+                      setState(() {
+                        _displayName = newName;
+                      });
+                    }
+                  },
+                ),
+              ],
+            );
+          }),
+        );
+      },
+    );
+  }
+
   List<Widget> _buildPageContents(BuildContext context) {
     if (_auth.signedIn) {
       return <Widget>[
         Spacer(),
         UserAvatar(photoUrl: _photoUrl),
         SizedBox(height: 16.0),
-        Text(
-          _auth.currentUser.displayName ?? _auth.currentUser.phoneNumber,
-          style: Theme.of(context).textTheme.title,
+        Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Expanded(child: Container()),
+              Text(
+                _displayName ?? _auth.currentUser.phoneNumber,
+                style: Theme.of(context).textTheme.title,
+              ),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: Icon(Icons.edit),
+                    iconSize: 18.0,
+                    onPressed: () {
+                      _editProfile(context);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         Spacer(),
         Divider(height: 0.0),

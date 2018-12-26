@@ -39,6 +39,12 @@ class Auth {
     _state.value = AuthState.none;
   }
 
+  Future updateUserProfile({String displayName}) async {
+    UserUpdateInfo updateInfo = UserUpdateInfo();
+    updateInfo.displayName = displayName;
+    await _currentUser.value?.updateProfile(updateInfo);
+  }
+
   Future googleSignIn() async {
     _state.value = AuthState.inProgress;
     GoogleSignInAccount googleUser =
