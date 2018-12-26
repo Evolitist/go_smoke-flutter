@@ -16,6 +16,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
   final Auth _auth = Auth();
   AnimationController _fadeController;
   AnimationController _eeController;
+  TextEditingController _inputController;
   bool _eeVertical = true;
   int _eeCounter = 0;
   String _photoUrl;
@@ -39,6 +40,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
         }
         setState(() {});
       });
+    _inputController = TextEditingController();
     _auth.addCallback(() => setState(() {
           _fadeController.reverse();
           _photoUrl = _auth.currentUser?.photoUrl;
@@ -60,6 +62,74 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
     }
   }
 
+  void _phoneVerify(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('Enter verification code'),
+          content: TextField(
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            controller: _inputController,
+            textAlign: TextAlign.center,
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('CANCEL'),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+              },
+            ),
+            FlatButton(
+              child: Text('SEND'),
+              onPressed: () {
+                _auth.verifyPhone(_inputController.text);
+                Navigator.of(ctx).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _phoneSignIn(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('Enter phone number'),
+          content: TextField(
+            autofocus: true,
+            keyboardType: TextInputType.phone,
+            controller: _inputController,
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('CANCEL'),
+              onPressed: () {
+                _fadeController.reverse();
+                Navigator.of(ctx).pop();
+              },
+            ),
+            FlatButton(
+              child: Text('VERIFY'),
+              onPressed: () {
+                _auth.startPhoneSignIn(_inputController.text, () {
+                  Navigator.of(context).pop();
+                });
+                _inputController.text = '';
+                Navigator.of(ctx).pop();
+                _phoneVerify(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   List<Widget> _buildPageContents(BuildContext context) {
     if (_auth.signedIn) {
       return <Widget>[
@@ -76,7 +146,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
                 alignment: Alignment.center,
                 child: CircleAvatar(
                   radius: 48.0,
-                  backgroundImage: CachedNetworkImageProvider(_photoUrl),
+                  backgroundImage: CachedNetworkImageProvider(_photoUrl ?? ''),
                 ),
               ),
             ),
@@ -190,7 +260,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
         ),
         SizedBox(height: 16.0),
         Text(
-          _auth.currentUser.displayName,
+          _auth.currentUser.displayName ?? _auth.currentUser.phoneNumber,
           style: Theme.of(context).textTheme.title,
         ),
         Spacer(),
@@ -232,7 +302,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
           icon: Icon(Icons.smartphone),
           label: Text('Sign in with phone'),
           onPressed: () {
-            _auth.googleSignIn();
+            _phoneSignIn(context);
             _fadeController.forward();
           },
         ),

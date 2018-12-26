@@ -6,13 +6,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 enum AuthProvider {
   google,
+  phone,
 }
 
-enum AuthState {
-  none,
-  inProgress,
-  signedIn
-}
+enum AuthState { none, inProgress, signedIn }
 
 class Auth {
   static final Auth _singleton = Auth._();
@@ -20,6 +17,7 @@ class Auth {
   final GoogleSignIn _googleAuth = GoogleSignIn();
   final ValueNotifier<FirebaseUser> _currentUser = ValueNotifier(null);
   final ValueNotifier<AuthState> _state = ValueNotifier(AuthState.none);
+  String _verificationId;
 
   factory Auth() => _singleton;
 
@@ -58,5 +56,30 @@ class Auth {
       );
     }
     _state.value = AuthState.signedIn;
+  }
+
+  Future startPhoneSignIn(String phoneNumber, VoidCallback onSuccess) async {
+    _state.value = AuthState.inProgress;
+    _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      timeout: const Duration(seconds: 60),
+      verificationCompleted: (newUser) {
+        _currentUser.value = newUser;
+        _state.value = AuthState.signedIn;
+        onSuccess();
+      },
+      verificationFailed: (exception) {
+        print(exception);
+        _state.value = AuthState.none;
+      },
+      codeSent: (vId, [force]) {
+        _verificationId = vId;
+      },
+      codeAutoRetrievalTimeout: (vId) {},
+    );
+  }
+
+  Future verifyPhone(String code) async {
+    _auth.signInWithPhoneNumber(verificationId: _verificationId, smsCode: code);
   }
 }
