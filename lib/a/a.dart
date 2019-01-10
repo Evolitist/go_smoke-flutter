@@ -165,13 +165,13 @@ class _UserAvatarState extends State<UserAvatar>
               setState(() {
                 _eeVertical = false;
               });
-              _eeController.fling(velocity: 0.001);
+              _eeController.fling(velocity: 0.001 * details.velocity.pixelsPerSecond.dx.sign);
             },
             onVerticalDragEnd: (details) {
               setState(() {
                 _eeVertical = true;
               });
-              _eeController.fling(velocity: 0.001);
+              _eeController.fling(velocity: 0.001 * details.velocity.pixelsPerSecond.dy.sign);
             },
           ),
         ),
