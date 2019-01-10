@@ -4,12 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-enum AuthProvider {
-  google,
-  phone,
-}
+enum AuthProvider { google, phone }
 
 enum AuthState { none, inProgress, signedIn }
+
+enum ProfileState { still, updating }
 
 class Auth {
   static final Auth _singleton = Auth._();
@@ -17,6 +16,7 @@ class Auth {
   final GoogleSignIn _googleAuth = GoogleSignIn();
   final ValueNotifier<FirebaseUser> _currentUser = ValueNotifier(null);
   final ValueNotifier<AuthState> _state = ValueNotifier(AuthState.none);
+  final ValueNotifier<ProfileState> _profileState = ValueNotifier(ProfileState.still);
   String _verificationId;
 
   factory Auth() => _singleton;
@@ -33,6 +33,8 @@ class Auth {
 
   bool get inProgress => _state.value == AuthState.inProgress;
 
+  bool get updating => _profileState.value == ProfileState.updating;
+
   Future signOut() async {
     await _auth.signOut();
     _currentUser.value = null;
@@ -40,9 +42,13 @@ class Auth {
   }
 
   Future updateUserProfile({String displayName}) async {
+    _profileState.value = ProfileState.updating;
     UserUpdateInfo updateInfo = UserUpdateInfo();
     updateInfo.displayName = displayName;
     await _currentUser.value?.updateProfile(updateInfo);
+    await _currentUser.value?.reload();
+    _profileState.value = ProfileState.still;
+    _auth.currentUser().then((user) => _currentUser.value = user);
   }
 
   Future googleSignIn() async {
@@ -64,7 +70,12 @@ class Auth {
     _state.value = AuthState.signedIn;
   }
 
-  Future startPhoneSignIn({String phoneNumber, VoidCallback onCodeSent, VoidCallback onSuccess, VoidCallback onError,}) async {
+  Future startPhoneSignIn({
+    String phoneNumber,
+    VoidCallback onCodeSent,
+    VoidCallback onSuccess,
+    VoidCallback onError,
+  }) async {
     _state.value = AuthState.inProgress;
     _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,

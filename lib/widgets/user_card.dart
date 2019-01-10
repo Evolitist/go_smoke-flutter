@@ -89,9 +89,9 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
                 FlatButton(
                   child: _auth.inProgress
                       ? SizedBox(
-                          width: Theme.of(context).buttonTheme.height - 4.0,
-                          height: Theme.of(context).buttonTheme.height - 4.0,
-                          child: CircularProgressIndicator(),
+                          width: Theme.of(context).buttonTheme.height - 24.0,
+                          height: Theme.of(context).buttonTheme.height - 24.0,
+                          child: CircularProgressIndicator(strokeWidth: 2.0),
                         )
                       : Text('VERIFY'),
                   onPressed: _auth.inProgress
@@ -130,7 +130,7 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
         String newName;
         return Form(
           autovalidate: true,
-          child: LayoutBuilder(builder: (ctx, constraints) {
+          child: StatefulBuilder(builder: (ctx, setDialogState) {
             return AlertDialog(
               title: Text('Edit profile'),
               content: Column(
@@ -162,17 +162,24 @@ class _UserCardState extends State<UserCard> with TickerProviderStateMixin {
                   },
                 ),
                 FlatButton(
-                  child: Text('UPDATE'),
-                  onPressed: () async {
-                    if (Form.of(ctx).validate()) {
-                      Form.of(ctx).save();
-                      await _auth.updateUserProfile(displayName: newName);
-                      Navigator.of(context).pop();
-                      setState(() {
-                        _displayName = newName;
-                      });
-                    }
-                  },
+                  child: _auth.updating
+                      ? SizedBox(
+                          width: Theme.of(context).buttonTheme.height - 24.0,
+                          height: Theme.of(context).buttonTheme.height - 24.0,
+                          child: CircularProgressIndicator(strokeWidth: 2.0),
+                        )
+                      : Text('UPDATE'),
+                  onPressed: _auth.updating
+                      ? null
+                      : () async {
+                          if (Form.of(ctx).validate()) {
+                            Form.of(ctx).save();
+                            Future job = _auth.updateUserProfile(displayName: newName);
+                            setDialogState(() {});
+                            await job;
+                            Navigator.of(context).pop();
+                          }
+                        },
                 ),
               ],
             );
