@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../a/a.dart';
 import '../services/auth.dart';
-import '../widgets/user_avatar_ee.dart';
 
 class UserCard extends StatefulWidget {
   @override
