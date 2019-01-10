@@ -162,26 +162,16 @@ class _UserAvatarState extends State<UserAvatar>
                 ? HitTestBehavior.translucent
                 : HitTestBehavior.opaque,
             onHorizontalDragEnd: (details) {
-              double velocity = details.velocity.pixelsPerSecond.dx /
-                  min(MediaQuery.of(context).size.width,
-                      MediaQuery.of(context).size.height);
-              if (velocity.abs() > 10) {
                 setState(() {
                   _eeVertical = false;
                 });
-                _eeController.fling(velocity: velocity * 0.0001);
-              }
+                _eeController.fling(velocity: 0.001);
             },
             onVerticalDragEnd: (details) {
-              double velocity = details.velocity.pixelsPerSecond.dy /
-                  min(MediaQuery.of(context).size.width,
-                      MediaQuery.of(context).size.height);
-              if (velocity.abs() > 10) {
                 setState(() {
                   _eeVertical = true;
                 });
-                _eeController.fling(velocity: velocity * 0.0001);
-              }
+                _eeController.fling(velocity: 0.001);
             },
           ),
         ),

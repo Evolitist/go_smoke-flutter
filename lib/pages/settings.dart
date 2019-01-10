@@ -208,7 +208,7 @@ class CustomBouncingScrollPhysics extends ScrollPhysics {
   }
 
   double frictionFactor(double overscrollFraction) =>
-      0.01 * pow(1 - overscrollFraction, 2);
+      0.05 * pow(1 - overscrollFraction, 2);
 
   @override
   double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
