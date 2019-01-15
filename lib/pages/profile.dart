@@ -26,9 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
           iconTheme: Theme.of(context).iconTheme,
           textTheme: Theme.of(context).textTheme,
           forceElevated: isScrolled,
-          expandedHeight: signedIn
-              ? 176.0 + kTextTabBarHeight
-              : null,
+          expandedHeight: signedIn ? 176.0 + kTextTabBarHeight : null,
           flexibleSpace: Builder(
             builder: (ctx) {
               FlexibleSpaceBarSettings set =
@@ -40,9 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       SizedBox(
                         height: 16.0,
                       ),
-                      UserAvatar(
-                          photoUrl: _currentUser?.photoUrl ??
-                              ''),
+                      UserAvatar(photoUrl: _currentUser?.photoUrl ?? ''),
                     ],
                   ),
                 ),
@@ -208,12 +204,10 @@ class _GoogleLoginButton extends StatefulWidget {
 class _GoogleLoginButtonState extends State<_GoogleLoginButton> {
   @override
   Widget build(BuildContext context) {
-    bool inProgress =
-        AuthModel.of(context, aspect: 'authState').authState ==
-            AuthState.inProgress;
-    bool correct =
-        AuthModel.of(context, aspect: 'authProvider').authProvider ==
-            AuthProvider.google;
+    bool inProgress = AuthModel.of(context, aspect: 'authState').authState ==
+        AuthState.inProgress;
+    bool correct = AuthModel.of(context, aspect: 'authProvider').authProvider ==
+        AuthProvider.google;
     return RaisedButton.icon(
       icon: Icon(Icons.cloud),
       label: correct
@@ -249,12 +243,10 @@ class _PhoneLoginButton extends StatefulWidget {
 class _PhoneLoginButtonState extends State<_PhoneLoginButton> {
   @override
   Widget build(BuildContext context) {
-    bool inProgress =
-        AuthModel.of(context, aspect: 'authState').authState ==
-            AuthState.inProgress;
-    bool correct =
-        AuthModel.of(context, aspect: 'authProvider').authProvider ==
-            AuthProvider.phone;
+    bool inProgress = AuthModel.of(context, aspect: 'authState').authState ==
+        AuthState.inProgress;
+    bool correct = AuthModel.of(context, aspect: 'authProvider').authProvider ==
+        AuthProvider.phone;
     return RaisedButton.icon(
       icon: Icon(Icons.smartphone),
       label: correct

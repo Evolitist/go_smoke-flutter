@@ -52,10 +52,11 @@ class _MapboxMapState extends State<MapboxMap> {
             TileLayerOptions(
               urlTemplate: "https://api.mapbox.com/v4/"
                   "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
-              backgroundColor: _prefs['isDark'] ? Color(0xff111111) : Color(0xffeeeeee),
+              backgroundColor:
+                  _prefs['isDark'] ? Color(0xff111111) : Color(0xffeeeeee),
               additionalOptions: {
                 'accessToken':
-                'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
+                    'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
                 'id': 'mapbox.$tileType',
               },
             ),
@@ -64,12 +65,12 @@ class _MapboxMapState extends State<MapboxMap> {
                 Marker(
                   point: _latLng,
                   builder: (context) => Material(
-                    elevation: 4.0,
-                    shape: CircleBorder(
-                      side: BorderSide(color: Colors.white),
-                    ),
-                    color: Colors.blue,
-                  ),
+                        elevation: 4.0,
+                        shape: CircleBorder(
+                          side: BorderSide(color: Colors.white),
+                        ),
+                        color: Colors.blue,
+                      ),
                   width: 16.0,
                   height: 16.0,
                   anchor: AnchorPos.center,

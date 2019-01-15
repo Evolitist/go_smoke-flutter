@@ -45,7 +45,8 @@ class Prefs {
 
   void operator []=(String key, dynamic value) => set(key, value);
 
-  void listen<T>(String key, ValueChanged<T> listener, {int uid: 0, T defaultValue}) {
+  void listen<T>(String key, ValueChanged<T> listener,
+      {int uid: 0, T defaultValue}) {
     dynamic _defValue = _prefs.get(key);
     dynamic defValue = _defValue is List ? _defValue.cast<String>() : _defValue;
     _checkListener<T>(key, defValue ?? defaultValue);
@@ -63,7 +64,8 @@ class Prefs {
     }
   }
 
-  call<T>(String key, ValueChanged<T> listener, {int uid: 0, T defaultValue}) => listen(key, listener, uid: uid, defaultValue: defaultValue);
+  call<T>(String key, ValueChanged<T> listener, {int uid: 0, T defaultValue}) =>
+      listen(key, listener, uid: uid, defaultValue: defaultValue);
 
   void _set(String key, dynamic value) async {
     if (value is bool) {

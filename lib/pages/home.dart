@@ -33,13 +33,13 @@ class _HomePageState extends State<HomePage> {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text('Permissions error'),
-              content:
-              Text('Location permission is reqired for app to work.'),
-              actions: <Widget>[
-                FlatButton(onPressed: () => exit(0), child: Text('OK')),
-              ],
-            ),
+                  title: Text('Permissions error'),
+                  content:
+                      Text('Location permission is reqired for app to work.'),
+                  actions: <Widget>[
+                    FlatButton(onPressed: () => exit(0), child: Text('OK')),
+                  ],
+                ),
           );
         }
       });

@@ -34,11 +34,11 @@ class _UserAvatarState extends State<UserAvatar>
       animationBehavior: AnimationBehavior.preserve,
       vsync: this,
     )..addListener(() {
-      if (_eeController.value.abs() == 100.0) {
-        _checkEE(_eeVertical, _eeController.value);
-      }
-      setState(() {});
-    });
+        if (_eeController.value.abs() == 100.0) {
+          _checkEE(_eeVertical, _eeController.value);
+        }
+        setState(() {});
+      });
   }
 
   void _checkEE(bool a, double d) {
@@ -62,16 +62,16 @@ class _UserAvatarState extends State<UserAvatar>
       children: <Widget>[
         Transform(
           transform:
-          Matrix4.rotationX(_eeVertical ? _eeController.value * pi : 0.0),
+              Matrix4.rotationX(_eeVertical ? _eeController.value * pi : 0.0),
           alignment: Alignment.center,
           child: Transform(
             transform:
-            Matrix4.rotationY(_eeVertical ? 0.0 : _eeController.value * pi),
+                Matrix4.rotationY(_eeVertical ? 0.0 : _eeController.value * pi),
             alignment: Alignment.center,
             child: CircleAvatar(
               radius: 48.0,
               backgroundImage:
-              CachedNetworkImageProvider(widget.photoUrl ?? ''),
+                  CachedNetworkImageProvider(widget.photoUrl ?? ''),
             ),
           ),
         ),
@@ -165,13 +165,15 @@ class _UserAvatarState extends State<UserAvatar>
               setState(() {
                 _eeVertical = false;
               });
-              _eeController.fling(velocity: 0.001 * details.velocity.pixelsPerSecond.dx.sign);
+              _eeController.fling(
+                  velocity: 0.001 * details.velocity.pixelsPerSecond.dx.sign);
             },
             onVerticalDragEnd: (details) {
               setState(() {
                 _eeVertical = true;
               });
-              _eeController.fling(velocity: 0.001 * details.velocity.pixelsPerSecond.dy.sign);
+              _eeController.fling(
+                  velocity: 0.001 * details.velocity.pixelsPerSecond.dy.sign);
             },
           ),
         ),

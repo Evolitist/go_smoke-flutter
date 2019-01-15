@@ -109,8 +109,16 @@ class _ChoiceChipBlockState extends State<ChoiceChipBlock> {
               label: Text(widget.names[i]),
               selected: _selected == i,
               selectedColor: Colors.orange.withAlpha(0x3d),
-              labelStyle: theme.chipTheme.labelStyle.copyWith(color: theme.brightness == Brightness.light ? Colors.black : Colors.white),
-              shape: StadiumBorder(side: BorderSide(color: Colors.orange, style: _selected == i ? BorderStyle.solid : BorderStyle.none)),
+              labelStyle: theme.chipTheme.labelStyle.copyWith(
+                  color: theme.brightness == Brightness.light
+                      ? Colors.black
+                      : Colors.white),
+              shape: StadiumBorder(
+                  side: BorderSide(
+                      color: Colors.orange,
+                      style: _selected == i
+                          ? BorderStyle.solid
+                          : BorderStyle.none)),
               onSelected: (b) {
                 setState(() {
                   _selected = i;

@@ -28,7 +28,8 @@ class AuthManager extends StatefulWidget {
   AuthManagerState createState() => AuthManagerState();
 
   static AuthManagerState of(BuildContext context) {
-    return (context.inheritFromWidgetOfExactType(AuthModel) as AuthModel).controller;
+    return (context.inheritFromWidgetOfExactType(AuthModel) as AuthModel)
+        .controller;
   }
 }
 
@@ -45,7 +46,9 @@ class AuthManagerState extends State<AuthManager> {
   String _verificationId;
 
   bool get signedIn => user != null;
+
   bool get inProgress => authState == AuthState.inProgress;
+
   bool get updating => profileState == ProfileState.updating;
 
   @override
@@ -72,8 +75,8 @@ class AuthManagerState extends State<AuthManager> {
       if (doc.exists) {
         List<DocumentReference> newGroups = List.castFrom(doc.data['groups']);
         newGroups.forEach((doc) => doc.get().then((gDoc) {
-          groups.add(Group(gDoc.documentID, gDoc.data['name']));
-        }));
+              groups.add(Group(gDoc.documentID, gDoc.data['name']));
+            }));
       } else {
         doc.reference.setData({'groups': _groupsToRefs(groups)});
       }
@@ -280,29 +283,29 @@ class AuthManagerState extends State<AuthManager> {
                 FlatButton(
                   child: inProgress
                       ? SizedBox(
-                    width: Theme.of(context).buttonTheme.height - 24.0,
-                    height: Theme.of(context).buttonTheme.height - 24.0,
-                    child: CircularProgressIndicator(strokeWidth: 2.0),
-                  )
+                          width: Theme.of(context).buttonTheme.height - 24.0,
+                          height: Theme.of(context).buttonTheme.height - 24.0,
+                          child: CircularProgressIndicator(strokeWidth: 2.0),
+                        )
                       : Text('VERIFY'),
                   onPressed: inProgress
                       ? null
                       : () {
-                    _startPhoneSignIn(
-                      phoneNumber: _inputController.text,
-                      onCodeSent: () {
-                        _inputController.text = '';
-                        Navigator.of(context).pop();
-                        _phoneVerify(context);
-                      },
-                      onSuccess: () {
-                        Navigator.of(context).pop();
-                      },
-                      onError: () {
-                        Navigator.of(context).pop();
-                      },
-                    );
-                  },
+                          _startPhoneSignIn(
+                            phoneNumber: _inputController.text,
+                            onCodeSent: () {
+                              _inputController.text = '';
+                              Navigator.of(context).pop();
+                              _phoneVerify(context);
+                            },
+                            onSuccess: () {
+                              Navigator.of(context).pop();
+                            },
+                            onError: () {
+                              Navigator.of(context).pop();
+                            },
+                          );
+                        },
                 ),
               ],
             );
@@ -353,23 +356,23 @@ class AuthManagerState extends State<AuthManager> {
                 FlatButton(
                   child: updating
                       ? SizedBox(
-                    width: Theme.of(context).buttonTheme.height - 24.0,
-                    height: Theme.of(context).buttonTheme.height - 24.0,
-                    child: CircularProgressIndicator(strokeWidth: 2.0),
-                  )
+                          width: Theme.of(context).buttonTheme.height - 24.0,
+                          height: Theme.of(context).buttonTheme.height - 24.0,
+                          child: CircularProgressIndicator(strokeWidth: 2.0),
+                        )
                       : Text('UPDATE'),
                   onPressed: updating
                       ? null
                       : () async {
-                    if (Form.of(ctx).validate()) {
-                      Form.of(ctx).save();
-                      Future job =
-                      _updateUserProfile(displayName: newName);
-                      setDialogState(() {});
-                      await job;
-                      Navigator.of(context).pop();
-                    }
-                  },
+                          if (Form.of(ctx).validate()) {
+                            Form.of(ctx).save();
+                            Future job =
+                                _updateUserProfile(displayName: newName);
+                            setDialogState(() {});
+                            await job;
+                            Navigator.of(context).pop();
+                          }
+                        },
                 ),
               ],
             );
@@ -413,7 +416,9 @@ class AuthModel extends InheritedModel<String> {
   final ProfileState profileState;
 
   bool get signedIn => user != null;
+
   bool get inProgress => authState == AuthState.inProgress;
+
   bool get updating => profileState == ProfileState.updating;
 
   @override
