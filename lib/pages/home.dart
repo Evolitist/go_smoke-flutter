@@ -7,7 +7,6 @@ import '../services/location.dart';
 import '../services/prefs.dart';
 import '../widgets/backdrop.dart';
 import '../widgets/map.dart';
-import '../widgets/user_card.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -82,7 +81,7 @@ class _HomePageState extends State<HomePage> {
         child: Icon(Icons.smoking_rooms),
       ),
       settingsClick: () => Navigator.pushNamed(context, '/settings'),
-      bottomSheet: UserCard(),
+      accountClick: () => Navigator.pushNamed(context, '/profile'),
     );
   }
 }

@@ -206,7 +206,9 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
         if (_bottomSheetVisible) {
           _toggleBottomSheetVisibility();
           return Future.value(false);
-        } else return Future.value(true);
+        } else {
+          return Future.value(true);
+        }
       },
       child: Material(
         elevation: 0.0,
@@ -245,7 +247,8 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
                   ),
                   IconButton(
                     icon: Icon(Icons.person),
-                    onPressed: () => _toggleBottomSheetVisibility(),
+                    onPressed: widget.accountClick ??
+                        () => _toggleBottomSheetVisibility(),
                   ),
                   IconButton(
                     icon: Icon(Icons.settings),
