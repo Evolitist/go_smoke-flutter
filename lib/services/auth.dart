@@ -112,13 +112,19 @@ class AuthManagerState extends State<AuthManager> {
   }
 
   Future _updateUserProfile({String displayName}) async {
-    profileState = ProfileState.updating;
+    setState(() {
+      profileState = ProfileState.updating;
+    });
     UserUpdateInfo updateInfo = UserUpdateInfo();
     updateInfo.displayName = displayName;
     await user?.updateProfile(updateInfo);
     await user?.reload();
-    profileState = ProfileState.still;
-    _auth.currentUser().then((user) => this.user = user);
+    _auth.currentUser().then((user) {
+      setState(() {
+        profileState = ProfileState.still;
+        this.user = user;
+      });
+    });
   }
 
   Future googleSignIn() async {
