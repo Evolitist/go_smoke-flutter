@@ -134,6 +134,28 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  ListTile _createGroupTile(Group group) {
+    bool admin = group.creator == _currentUser.uid;
+    return ListTile(
+      leading: admin ? Icon(Icons.star) : Icon(Icons.person),
+      title: Text(group.name),
+      trailing: PopupMenuButton(
+        itemBuilder: (ctx) => [PopupMenuItem(child: Text('Delete'), value: 0)],
+        onSelected: (i) {
+          switch (i) {
+            case 0:
+              _authManager.deleteGroup(
+                context,
+                group,
+                onSuccess: () => setState(() {}),
+              );
+          }
+        },
+      ),
+      onTap: () {},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     _authManager = AuthManager.of(context);
@@ -159,13 +181,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     .sliverOverlapAbsorberHandleFor(ctx),
                               ),
                               SliverList(
-                                delegate: SliverChildListDelegate(
-                                  _groups.map((g) {
-                                    return ListTile(
-                                      title: Text(g.name),
-                                      onTap: () {},
-                                    );
-                                  }).toList(),
+                                delegate: SliverChildBuilderDelegate(
+                                  (ctx, i) => _createGroupTile(_groups[i]),
+                                  childCount: _groups.length,
                                 ),
                               ),
                             ],

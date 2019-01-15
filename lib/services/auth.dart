@@ -45,8 +45,6 @@ class AuthManagerState extends State<AuthManager> {
   ProfileState profileState = ProfileState.still;
   String _verificationId;
 
-  bool get signedIn => user != null;
-
   bool get inProgress => authState == AuthState.inProgress;
 
   bool get updating => profileState == ProfileState.updating;
@@ -75,7 +73,8 @@ class AuthManagerState extends State<AuthManager> {
       if (doc.exists) {
         List<DocumentReference> newGroups = List.castFrom(doc.data['groups']);
         newGroups.forEach((doc) => doc.get().then((gDoc) {
-              groups.add(Group(gDoc.documentID, gDoc.data['name']));
+              groups.add(Group(
+                  gDoc.documentID, gDoc.data['name'], gDoc.data['creator']));
             }));
       } else {
         doc.reference.setData({'groups': _groupsToRefs(groups)});
@@ -89,8 +88,9 @@ class AuthManagerState extends State<AuthManager> {
   Future _createGroup({@required String name, VoidCallback onSuccess}) async {
     //TODO: limit group creations per user
     DocumentReference groupRef = _db.collection('groups').document()
-      ..setData({'name': name});
-    List<Group> groups = this.groups..add(Group(groupRef.documentID, name));
+      ..setData({'name': name, 'creator': user.uid});
+    List<Group> groups = this.groups
+      ..add(Group(groupRef.documentID, name, user.uid));
     await _db
         .collection('users')
         .document(user.uid)
@@ -98,6 +98,26 @@ class AuthManagerState extends State<AuthManager> {
     if (onSuccess != null) {
       onSuccess();
     }
+    setState(() {
+      this.groups = groups;
+    });
+  }
+
+  Future _deleteGroup({@required Group group}) async {
+    DocumentReference groupRef = _db.collection('groups').document(group.uid);
+    await groupRef.delete();
+    List<Group> groups = this.groups..remove(group);
+    QuerySnapshot snap = await _db
+        .collection('users')
+        .where('groups', arrayContains: groupRef)
+        .getDocuments();
+    snap.documents.forEach((doc) {
+      doc.reference.setData(doc.data
+        ..update('groups', (list) {
+          List<DocumentReference> old = List.castFrom(list);
+          return List.of(old)..remove(groupRef);
+        }));
+    });
     setState(() {
       this.groups = groups;
     });
@@ -229,6 +249,50 @@ class AuthManagerState extends State<AuthManager> {
             ),
           ],
         );
+      },
+    );
+  }
+
+  void deleteGroup(BuildContext context, Group group,
+      {VoidCallback onSuccess}) {
+    bool deleting = false;
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setDialogState) {
+          return AlertDialog(
+            title: Text('Confirmation'),
+            content: Text(
+                'Are you sure you want to delete this group? This action cannot be undone!'),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('CANCEL'),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                },
+              ),
+              FlatButton(
+                child: deleting
+                    ? SizedBox(
+                        width: Theme.of(context).buttonTheme.height - 24.0,
+                        height: Theme.of(context).buttonTheme.height - 24.0,
+                        child: CircularProgressIndicator(strokeWidth: 2.0),
+                      )
+                    : Text('DELETE'),
+                onPressed: deleting
+                    ? null
+                    : () async {
+                        setDialogState(() => deleting = true);
+                        await _deleteGroup(group: group);
+                        if (onSuccess != null) {
+                          onSuccess();
+                        }
+                        Navigator.of(ctx).pop();
+                      },
+              ),
+            ],
+          );
+        });
       },
     );
   }
@@ -452,10 +516,12 @@ class AuthModel extends InheritedModel<String> {
 
 @immutable
 class Group {
-  const Group(this.uid, this.name)
+  const Group(this.uid, this.name, this.creator)
       : assert(uid != null),
-        assert(name != null);
+        assert(name != null),
+        assert(creator != null);
 
   final String uid;
   final String name;
+  final String creator;
 }
