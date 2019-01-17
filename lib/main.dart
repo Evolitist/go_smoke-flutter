@@ -10,7 +10,9 @@ import 'services/prefs.dart';
 
 void main() async {
   await Prefs.build();
-  runApp(new App());
+  runApp(AuthManager(
+    child: App(),
+  ));
 }
 
 class App extends StatefulWidget {
@@ -18,7 +20,7 @@ class App extends StatefulWidget {
   _AppState createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends State<App> with WidgetsBindingObserver {
   final Prefs _prefs = Prefs();
   final FCM _fcm = FCM();
   Brightness _brightness;
@@ -35,13 +37,31 @@ class _AppState extends State<App> {
       },
       defaultValue: false,
     );
+    WidgetsBinding.instance.addObserver(this);
     _fcm.init((s) => print(s));
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _retrieveDynamicLink();
+    }
+  }
+
+  Future<void> _retrieveDynamicLink() async {
+    final PendingDynamicLinkData data = await FirebaseDynamicLinks.instance.retrieveDynamicLink();
+    AuthManager.of(context).joinGroup(data?.link);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AuthManager(
-      child: MaterialApp(
+    return MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
           primarySwatch: Colors.orange,
@@ -67,7 +87,6 @@ class _AppState extends State<App> {
               );
           }
         },
-      ),
     );
   }
 }

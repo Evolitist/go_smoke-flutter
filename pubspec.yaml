@@ -13,6 +13,7 @@ dependencies:
   permission_handler: ^2.1.2
   google_sign_in: ^3.2.4
   firebase_auth: ^0.6.6
+  firebase_dynamic_links: ^0.1.0+1
   firebase_messaging: ^2.1.0
   cloud_firestore: ^0.8.2+3
   flutter_local_notifications: ^0.4.2+1

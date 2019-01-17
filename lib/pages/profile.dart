@@ -116,39 +116,40 @@ class _ProfilePageState extends State<ProfilePage> {
     ];
   }
 
-  Widget _buildContent(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Spacer(),
-        _GoogleLoginButton(authManager: _authManager),
-        SizedBox(
-          height: 16.0,
-          child: FractionallySizedBox(
-            widthFactor: 0.4,
-            child: Divider(),
-          ),
-        ),
-        _PhoneLoginButton(authManager: _authManager),
-        Spacer(),
-      ],
-    );
-  }
-
-  ListTile _createGroupTile(Group group) {
+  ListTile _createGroupTile(BuildContext ctx, Group group) {
     bool admin = group.creator == _currentUser.uid;
     return ListTile(
       leading: admin ? Icon(Icons.star) : Icon(Icons.person),
       title: Text(group.name),
       trailing: PopupMenuButton(
-        itemBuilder: (ctx) => [PopupMenuItem(child: Text('Delete'), value: 0)],
+        itemBuilder: (ctx) {
+          if (admin) {
+            return <PopupMenuEntry>[
+              PopupMenuItem(child: Text('Invite'), value: 0),
+              PopupMenuDivider(),
+              PopupMenuItem(child: Text('Delete'), value: 1),
+            ];
+          } else {
+            return <PopupMenuEntry>[
+              PopupMenuItem(child: Text('Leave'), value: 2),
+            ];
+          }
+        },
         onSelected: (i) {
           switch (i) {
             case 0:
+              _authManager.inviteToGroup(ctx, group);
+              break;
+            case 1:
               _authManager.deleteGroup(
-                context,
+                ctx,
                 group,
                 onSuccess: () => setState(() {}),
               );
+              break;
+            case 2:
+              _authManager.leaveGroup(group);
+              break;
           }
         },
       ),
@@ -182,7 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               SliverList(
                                 delegate: SliverChildBuilderDelegate(
-                                  (ctx, i) => _createGroupTile(_groups[i]),
+                                  (ctx, i) => _createGroupTile(ctx, _groups[i]),
                                   childCount: _groups.length,
                                 ),
                               ),
@@ -193,7 +194,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                   }).toList(),
                 )
-              : _buildContent(context),
+              : Column(
+                  children: <Widget>[
+                    Spacer(),
+                    _GoogleLoginButton(authManager: _authManager),
+                    SizedBox(
+                      height: 16.0,
+                      child: FractionallySizedBox(
+                        widthFactor: 0.4,
+                        child: Divider(),
+                      ),
+                    ),
+                    _PhoneLoginButton(authManager: _authManager),
+                    Spacer(),
+                  ],
+                ),
         ),
       ),
       floatingActionButton: FloatingActionButton(

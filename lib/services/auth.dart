@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 export 'package:firebase_auth/firebase_auth.dart';
+export 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 
 final Function eq = const ListEquality().equals;
 
@@ -66,20 +69,26 @@ class AuthManagerState extends State<AuthManager> {
         .toList();
   }
 
+
+
   Future checkGroups() async {
     List<Group> groups = [];
     if (user == null) return;
-    _db.collection('users').document(user.uid).get().then((doc) {
-      if (doc.exists) {
-        List<DocumentReference> newGroups = List.castFrom(doc.data['groups']);
-        newGroups.forEach((doc) => doc.get().then((gDoc) {
-              groups.add(Group(
-                  gDoc.documentID, gDoc.data['name'], gDoc.data['creator']));
-            }));
-      } else {
-        doc.reference.setData({'groups': _groupsToRefs(groups)});
+    DocumentSnapshot doc =
+        await _db.collection('users').document(user.uid).get();
+    if (doc.exists) {
+      List<DocumentReference> newGroups = List.castFrom(doc.data['groups']);
+      for (var doc in newGroups) {
+        DocumentSnapshot gDoc = await doc.get();
+        groups.add(Group(
+          gDoc.documentID,
+          gDoc.data['name'],
+          gDoc.data['creator'],
+        ));
       }
-    });
+    } else {
+      doc.reference.setData({'groups': _groupsToRefs(groups)});
+    }
     setState(() {
       this.groups = groups;
     });
@@ -89,15 +98,12 @@ class AuthManagerState extends State<AuthManager> {
     //TODO: limit group creations per user
     DocumentReference groupRef = _db.collection('groups').document()
       ..setData({'name': name, 'creator': user.uid});
-    List<Group> groups = this.groups
+    List<Group> groups = List.of(this.groups)
       ..add(Group(groupRef.documentID, name, user.uid));
     await _db
         .collection('users')
         .document(user.uid)
         .setData({'groups': _groupsToRefs(groups)});
-    if (onSuccess != null) {
-      onSuccess();
-    }
     setState(() {
       this.groups = groups;
     });
@@ -106,7 +112,7 @@ class AuthManagerState extends State<AuthManager> {
   Future _deleteGroup({@required Group group}) async {
     DocumentReference groupRef = _db.collection('groups').document(group.uid);
     await groupRef.delete();
-    List<Group> groups = this.groups..remove(group);
+    List<Group> groups = List.of(this.groups)..remove(group);
     QuerySnapshot snap = await _db
         .collection('users')
         .where('groups', arrayContains: groupRef)
@@ -128,6 +134,7 @@ class AuthManagerState extends State<AuthManager> {
     setState(() {
       user = null;
       authState = AuthState.none;
+      groups = [];
     });
   }
 
@@ -172,6 +179,7 @@ class AuthManagerState extends State<AuthManager> {
       authState = AuthState.signedIn;
       authProvider = null;
     });
+    checkGroups();
   }
 
   Future _startPhoneSignIn({
@@ -193,6 +201,7 @@ class AuthManagerState extends State<AuthManager> {
           authState = AuthState.signedIn;
           authProvider = null;
         });
+        checkGroups();
         onSuccess();
       },
       verificationFailed: (exception) {
@@ -253,6 +262,61 @@ class AuthManagerState extends State<AuthManager> {
     );
   }
 
+  void inviteToGroup(BuildContext context, Group group) async {
+    //TODO: allow generating per-user invite links
+    var params = DynamicLinkParameters(
+      domain: 'gsmk.page.link',
+      link: Uri.parse(
+          'https://evolitist.github.io/gosmoke/join?gid=${group.uid}'),
+      androidParameters: AndroidParameters(
+        packageName: 'com.evolitist.gosmoke',
+      ),
+    );
+    var link = await params.buildShortLink();
+    Clipboard.setData(ClipboardData(text: link.shortUrl.toString()));
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Link copied to clipboard!'),
+      ),
+    );
+  }
+
+  void joinGroup(Uri link) async {
+    if (link == null) return;
+    String id = link.queryParameters['gid'];
+    if (id == null) return;
+    DocumentReference groupRef = _db.collection('groups').document(id);
+    DocumentSnapshot doc = await groupRef.get();
+    if (!doc.exists) return;
+    if (doc.data['creator'] == user.uid) return;
+    List<Group> groups = List.of(this.groups);
+    if (groups.any((g) => g.uid == groupRef.documentID)) return;
+    groups.add(Group(
+      groupRef.documentID,
+      doc.data['name'],
+      doc.data['creator'],
+    ));
+    await _db.collection('users').document(user.uid).setData({
+      'groups': _groupsToRefs(groups),
+    });
+    setState(() {
+      this.groups = groups;
+    });
+  }
+
+  void leaveGroup(Group group) async {
+    if (group == null) return;
+    List<Group> groups = List.of(this.groups);
+    if (!groups.contains(group)) return;
+    groups.remove(group);
+    await _db.collection('users').document(user.uid).setData({
+      'groups': _groupsToRefs(groups),
+    });
+    setState(() {
+      this.groups = groups;
+    });
+  }
+
   void deleteGroup(BuildContext context, Group group,
       {VoidCallback onSuccess}) {
     bool deleting = false;
@@ -284,9 +348,6 @@ class AuthManagerState extends State<AuthManager> {
                     : () async {
                         setDialogState(() => deleting = true);
                         await _deleteGroup(group: group);
-                        if (onSuccess != null) {
-                          onSuccess();
-                        }
                         Navigator.of(ctx).pop();
                       },
               ),
@@ -492,9 +553,18 @@ class AuthModel extends InheritedModel<String> {
   bool get updating => profileState == ProfileState.updating;
 
   @override
+  bool isSupportedAspect(Object aspect) {
+    return aspect == 'user' ||
+        aspect == 'groups' ||
+        aspect == 'authState' ||
+        aspect == 'authProvider' ||
+        aspect == 'profileState';
+  }
+
+  @override
   bool updateShouldNotify(AuthModel old) {
     return user != old.user ||
-        !eq(groups, old.groups) ||
+        groups.length != old.groups.length ||
         authState != old.authState ||
         authProvider != old.authProvider ||
         profileState != old.profileState;
@@ -503,7 +573,7 @@ class AuthModel extends InheritedModel<String> {
   @override
   bool updateShouldNotifyDependent(AuthModel old, Set<String> deps) {
     return (user != old.user && deps.contains('user')) ||
-        (!eq(groups, old.groups) && deps.contains('groups')) ||
+        (groups.length != old.groups.length && deps.contains('groups')) ||
         (authState != old.authState && deps.contains('authState')) ||
         (authProvider != old.authProvider && deps.contains('authProvider')) ||
         (profileState != old.profileState && deps.contains('profileState'));
