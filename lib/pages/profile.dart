@@ -141,11 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _authManager.inviteToGroup(ctx, group);
               break;
             case 1:
-              _authManager.deleteGroup(
-                ctx,
-                group,
-                onSuccess: () => setState(() {}),
-              );
+              _authManager.deleteGroup(ctx, group);
               break;
             case 2:
               _authManager.leaveGroup(group);

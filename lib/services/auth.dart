@@ -94,7 +94,7 @@ class AuthManagerState extends State<AuthManager> {
     });
   }
 
-  Future _createGroup({@required String name, VoidCallback onSuccess}) async {
+  Future _createGroup(String name) async {
     //TODO: limit group creations per user
     DocumentReference groupRef = _db.collection('groups').document()
       ..setData({'name': name, 'creator': user.uid});
@@ -249,10 +249,7 @@ class AuthManagerState extends State<AuthManager> {
             FlatButton(
               child: Text('CREATE'),
               onPressed: () {
-                _createGroup(
-                  name: _inputController.text,
-                  onSuccess: () => setState(() {}),
-                );
+                _createGroup(_inputController.text,);
                 Navigator.of(ctx).pop();
               },
             ),
@@ -317,8 +314,7 @@ class AuthManagerState extends State<AuthManager> {
     });
   }
 
-  void deleteGroup(BuildContext context, Group group,
-      {VoidCallback onSuccess}) {
+  void deleteGroup(BuildContext context, Group group) {
     bool deleting = false;
     showDialog(
       context: context,
@@ -391,6 +387,7 @@ class AuthManagerState extends State<AuthManager> {
   }
 
   void phoneSignIn(BuildContext context) {
+    _inputController.clear();
     showDialog(
       context: context,
       builder: (ctx) {
