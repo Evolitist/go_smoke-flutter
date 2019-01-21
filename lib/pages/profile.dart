@@ -156,8 +156,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     _authManager = AuthManager.of(context);
-    _currentUser = AuthModel.of(context, aspect: 'user').user;
-    _groups = AuthModel.of(context, aspect: 'groups').groups;
+    _currentUser = AuthModel.of(context, aspect: 'user');
+    _groups = List.castFrom(AuthModel.of(context, aspect: 'groups'));
     return Scaffold(
       body: DefaultTabController(
         length: _tabs.length,
@@ -233,10 +233,10 @@ class _GoogleLoginButton extends StatefulWidget {
 class _GoogleLoginButtonState extends State<_GoogleLoginButton> {
   @override
   Widget build(BuildContext context) {
-    bool inProgress = AuthModel.of(context, aspect: 'authState').authState ==
-        AuthState.inProgress;
-    bool correct = AuthModel.of(context, aspect: 'authProvider').authProvider ==
-        AuthProvider.google;
+    bool inProgress =
+        AuthModel.of(context, aspect: 'authState') == AuthState.inProgress;
+    bool correct =
+        AuthModel.of(context, aspect: 'authProvider') == AuthProvider.google;
     return RaisedButton.icon(
       icon: Icon(Icons.cloud),
       label: correct
@@ -272,10 +272,10 @@ class _PhoneLoginButton extends StatefulWidget {
 class _PhoneLoginButtonState extends State<_PhoneLoginButton> {
   @override
   Widget build(BuildContext context) {
-    bool inProgress = AuthModel.of(context, aspect: 'authState').authState ==
-        AuthState.inProgress;
-    bool correct = AuthModel.of(context, aspect: 'authProvider').authProvider ==
-        AuthProvider.phone;
+    bool inProgress =
+        AuthModel.of(context, aspect: 'authState') == AuthState.inProgress;
+    bool correct =
+        AuthModel.of(context, aspect: 'authProvider') == AuthProvider.phone;
     return RaisedButton.icon(
       icon: Icon(Icons.smartphone),
       label: correct

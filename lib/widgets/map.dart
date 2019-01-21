@@ -10,36 +10,26 @@ class MapboxMap extends StatefulWidget {
 }
 
 class _MapboxMapState extends State<MapboxMap> {
-  final Prefs _prefs = Prefs();
   final MapController _mapController = MapController();
   LatLng _latLng = LatLng(0.0, 0.0);
 
-  @override
-  void initState() {
-    super.initState();
-    _prefs<List<String>>(
-      'lastLoc',
-      (a) {
-        setState(() {
-          _latLng = LatLng(double.tryParse(a[0]), double.tryParse(a[1]));
-        });
-        if (_mapController.ready) {
-          _mapController.move(_latLng, 17.0);
-        }
-      },
-      defaultValue: ['0.0', '0.0'],
-    );
-  }
-
-  @override
-  void dispose() {
-    _prefs.stop('lastLoc');
-    super.dispose();
+  LatLng _parse(List<String> data) {
+    return LatLng(double.tryParse(data[0]), double.tryParse(data[1]));
   }
 
   @override
   Widget build(BuildContext context) {
-    String tileType = _prefs['isDark'] ? 'dark' : 'light';
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+    _latLng = _parse(
+      List.castFrom(
+        PrefsModel.of(
+          context,
+          aspect: 'lastLoc',
+          defaultValue: ['0.0', '0.0'],
+        ),
+      ),
+    );
+    if (_mapController.ready) _mapController.move(_latLng, 17.0);
     return Stack(
       children: <Widget>[
         FlutterMap(
@@ -52,12 +42,11 @@ class _MapboxMapState extends State<MapboxMap> {
             TileLayerOptions(
               urlTemplate: "https://api.mapbox.com/v4/"
                   "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
-              backgroundColor:
-                  _prefs['isDark'] ? Color(0xff111111) : Color(0xffeeeeee),
+              backgroundColor: isDark ? Color(0xff111111) : Color(0xffeeeeee),
               additionalOptions: {
                 'accessToken':
                     'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
-                'id': 'mapbox.$tileType',
+                'id': 'mapbox.${isDark ? 'dark' : 'light'}',
               },
             ),
             MarkerLayerOptions(

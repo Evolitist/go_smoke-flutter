@@ -3,83 +3,118 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Prefs {
-  static final Prefs _singleton = Prefs._();
-  final Map<String, ValueNotifier<dynamic>> _notifiers = Map();
-  final Map<String, List<VoidCallback>> _callbacks = Map();
-  SharedPreferences _prefs;
+class PrefsManager extends StatefulWidget {
+  PrefsManager({
+    Key key,
+    @required this.prefs,
+    this.child,
+  })  : assert(prefs != null),
+        super(key: key);
 
-  Prefs._();
+  final Widget child;
+  final SharedPreferences prefs;
 
-  factory Prefs() {
-    if (_singleton._prefs == null) {
-      throw Exception('You must call build() before using constructor');
-    }
-    return _singleton;
+  @override
+  State<StatefulWidget> createState() => PrefsManagerState();
+
+  static PrefsManagerState of(BuildContext context) {
+    return (context.inheritFromWidgetOfExactType(PrefsModel) as PrefsModel)
+        .controller;
   }
+}
 
-  static Future<Prefs> build() async {
-    _singleton._prefs ??= await SharedPreferences.getInstance();
-    return _singleton;
-  }
+class PrefsManagerState extends State<PrefsManager> {
+  Map<String, dynamic> values = {};
 
-  void _checkListener<T>(String key, T value) {
-    if (!_notifiers.containsKey(key)) {
-      _notifiers[key] = ValueNotifier(value);
-      _callbacks[key] = List()..length = 1;
-    }
-  }
-
-  T get<T>(String key, {T defaultValue}) {
-    _checkListener<T>(key, defaultValue);
-    return _notifiers[key].value;
-  }
-
-  dynamic operator [](String key) => get(key);
-
-  void set<T>(String key, T value) {
-    _checkListener<T>(key, value);
-    _set(key, value);
-    _notifiers[key].value = value;
-  }
-
-  void operator []=(String key, dynamic value) => set(key, value);
-
-  void listen<T>(String key, ValueChanged<T> listener,
-      {int uid: 0, T defaultValue}) {
-    dynamic _defValue = _prefs.get(key);
-    dynamic defValue = _defValue is List ? _defValue.cast<String>() : _defValue;
-    _checkListener<T>(key, defValue ?? defaultValue);
-    if (_callbacks[key][uid] != null) {
-      _notifiers[key].removeListener(_callbacks[key][uid]);
-    }
-    _callbacks[key][uid] = () => listener(_prefs.get(key));
-    _notifiers[key].addListener(_callbacks[key][uid]);
-    listener(_notifiers[key].value);
-  }
-
-  void stop(String key, [int uid = 0]) {
-    if (_notifiers.containsKey(key) && _callbacks[key][uid] != null) {
-      _notifiers[key].removeListener(_callbacks[key][uid]);
-    }
-  }
-
-  call<T>(String key, ValueChanged<T> listener, {int uid: 0, T defaultValue}) =>
-      listen(key, listener, uid: uid, defaultValue: defaultValue);
-
-  void _set(String key, dynamic value) async {
+  Future set(String key, dynamic value, [bool refresh = true]) async {
+    Future job;
     if (value is bool) {
-      await _prefs.setBool(key, value);
+      job = widget.prefs.setBool(key, value);
     } else if (value is int) {
-      await _prefs.setInt(key, value);
+      job = widget.prefs.setInt(key, value);
     } else if (value is double) {
-      await _prefs.setDouble(key, value);
+      job = widget.prefs.setDouble(key, value);
     } else if (value is String) {
-      await _prefs.setString(key, value);
+      job = widget.prefs.setString(key, value);
     } else if (value is List<String>) {
-      await _prefs.setStringList(key, value);
-    } else if (value != null) {
-      throw Exception('Unsupported preference type ${value.runtimeType}');
+      job = widget.prefs.setStringList(key, value);
+    } else if (value == null) {
+      job = widget.prefs.remove(key);
     }
+    if (job == null) {
+      throw Exception('Unsupported preference type ${value.runtimeType}');
+    } else {
+      if (refresh) {
+        setState(() {
+          values[key] = value;
+        });
+      } else {
+        values[key] = value;
+      }
+      return job;
+    }
+  }
+
+  T _get<T>(String key) => widget.prefs.get(key);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.prefs.getKeys().forEach((s) {
+      values[s] = widget.prefs.get(s);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PrefsModel(
+      controller: this,
+      prefs: Map.of(values),
+      child: widget.child,
+    );
+  }
+}
+
+class PrefsModel extends InheritedModel<String> {
+  const PrefsModel({
+    Key key,
+    @required this.controller,
+    @required this.prefs,
+    Widget child,
+  }) : super(key: key, child: child);
+
+  @protected
+  final PrefsManagerState controller;
+
+  @protected
+  final Map<String, dynamic> prefs;
+
+  Future set(String key, dynamic value) => controller.set(key, value);
+
+  T get<T>(String key, [T defaultValue]) =>
+      prefs[key] ?? controller._get(key) ?? defaultValue;
+
+  @override
+  bool isSupportedAspect(Object aspect) {
+    return prefs.containsKey(aspect);
+  }
+
+  @override
+  bool updateShouldNotify(PrefsModel old) => true;
+
+  @override
+  bool updateShouldNotifyDependent(PrefsModel old, Set<String> deps) {
+    for (var s in deps) {
+      if (prefs.containsKey(s) && prefs[s] != old.prefs[s]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static dynamic of(BuildContext context, {String aspect, dynamic defaultValue}) {
+    PrefsModel model = InheritedModel.inheritFrom(context, aspect: aspect);
+    if (aspect == null) return model;
+    return model.get(aspect, defaultValue);
   }
 }

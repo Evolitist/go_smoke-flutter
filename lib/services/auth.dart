@@ -1,17 +1,19 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:collection/collection.dart';
+import 'package:device_info/device_info.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'prefs.dart';
+
 export 'package:firebase_auth/firebase_auth.dart';
 export 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-
-final Function eq = const ListEquality().equals;
 
 enum AuthProvider { google, phone }
 
@@ -41,25 +43,40 @@ class AuthManagerState extends State<AuthManager> {
   final Firestore _db = Firestore.instance;
   final GoogleSignIn _googleAuth = GoogleSignIn();
   final TextEditingController _inputController = TextEditingController();
-  FirebaseUser user;
-  List<Group> groups = [];
-  AuthState authState = AuthState.none;
-  AuthProvider authProvider;
-  ProfileState profileState = ProfileState.still;
+  String _deviceId;
+  String _notificationId;
+  FirebaseUser _user;
+  List<Group> _groups = [];
+  AuthState _authState = AuthState.none;
+  AuthProvider _authProvider;
+  ProfileState _profileState = ProfileState.still;
   String _verificationId;
+  String _lastCell;
 
-  bool get inProgress => authState == AuthState.inProgress;
+  bool get _inProgress => _authState == AuthState.inProgress;
 
-  bool get updating => profileState == ProfileState.updating;
+  bool get _updating => _profileState == ProfileState.updating;
 
   @override
   void initState() {
     super.initState();
+    if (Platform.isIOS) {
+      DeviceInfoPlugin().iosInfo.then((info) {
+        _deviceId = info.identifierForVendor;
+      });
+    } else if (Platform.isAndroid) {
+      DeviceInfoPlugin().androidInfo.then((info) {
+        _deviceId = info.androidId;
+      });
+    }
     _auth.currentUser().then((currentUser) {
       setState(() {
-        user = currentUser;
+        _user = currentUser;
       });
       checkGroups();
+    });
+    FirebaseMessaging().getToken().then((token) {
+      _notificationId = token;
     });
   }
 
@@ -69,13 +86,11 @@ class AuthManagerState extends State<AuthManager> {
         .toList();
   }
 
-
-
   Future checkGroups() async {
     List<Group> groups = [];
-    if (user == null) return;
+    if (_user == null) return;
     DocumentSnapshot doc =
-        await _db.collection('users').document(user.uid).get();
+        await _db.collection('users').document(_user.uid).get();
     if (doc.exists) {
       List<DocumentReference> newGroups = List.castFrom(doc.data['groups']);
       for (var doc in newGroups) {
@@ -86,33 +101,57 @@ class AuthManagerState extends State<AuthManager> {
           gDoc.data['creator'],
         ));
       }
+      Map<String, dynamic> devices = Map.from(doc.data['devices'] ?? {});
+      devices[_deviceId] = {
+        'notificationId': _notificationId,
+        'lastCell': PrefsModel.of(context, aspect: 'cell'),
+      };
+      await doc.reference.setData(doc.data..['devices'] = devices);
     } else {
-      doc.reference.setData({'groups': _groupsToRefs(groups)});
+      doc.reference.setData({
+        'displayName': _user.displayName ?? '',
+        'groups': _groupsToRefs(groups),
+        'devices': {
+          _deviceId: {
+            'notificationId': _notificationId,
+            'lastCell': PrefsModel.of(context, aspect: 'cell'),
+          },
+        }
+      });
     }
     setState(() {
-      this.groups = groups;
+      this._groups = groups;
     });
+  }
+
+  Future _updateCell() async {
+    if (_user == null) return;
+    DocumentReference userRef = _db.collection('users').document(_user.uid);
+    DocumentSnapshot doc = await userRef.get();
+    Map<String, dynamic> device = Map.from(doc.data['devices'][_deviceId]);
+    device['lastCell'] = PrefsModel.of(context, aspect: 'cell');
+    await userRef.setData(doc.data..['devices'][_deviceId] = device);
   }
 
   Future _createGroup(String name) async {
     //TODO: limit group creations per user
     DocumentReference groupRef = _db.collection('groups').document()
-      ..setData({'name': name, 'creator': user.uid});
-    List<Group> groups = List.of(this.groups)
-      ..add(Group(groupRef.documentID, name, user.uid));
+      ..setData({'name': name, 'creator': _user.uid});
+    List<Group> groups = List.of(this._groups)
+      ..add(Group(groupRef.documentID, name, _user.uid));
     await _db
         .collection('users')
-        .document(user.uid)
+        .document(_user.uid)
         .setData({'groups': _groupsToRefs(groups)});
     setState(() {
-      this.groups = groups;
+      this._groups = groups;
     });
   }
 
   Future _deleteGroup({@required Group group}) async {
     DocumentReference groupRef = _db.collection('groups').document(group.uid);
     await groupRef.delete();
-    List<Group> groups = List.of(this.groups)..remove(group);
+    List<Group> groups = List.of(this._groups)..remove(group);
     QuerySnapshot snap = await _db
         .collection('users')
         .where('groups', arrayContains: groupRef)
@@ -125,39 +164,44 @@ class AuthManagerState extends State<AuthManager> {
         }));
     });
     setState(() {
-      this.groups = groups;
+      this._groups = groups;
     });
   }
 
   Future signOut() async {
+    DocumentSnapshot doc =
+        await _db.collection('users').document(_user.uid).get();
+    Map<String, dynamic> devices = Map.from(doc.data['devices'])
+      ..remove(_deviceId);
+    await doc.reference.setData(doc.data..['devices'] = devices);
     await _auth.signOut();
     setState(() {
-      user = null;
-      authState = AuthState.none;
-      groups = [];
+      _user = null;
+      _authState = AuthState.none;
+      _groups = [];
     });
   }
 
   Future _updateUserProfile({String displayName}) async {
     setState(() {
-      profileState = ProfileState.updating;
+      _profileState = ProfileState.updating;
     });
     UserUpdateInfo updateInfo = UserUpdateInfo();
     updateInfo.displayName = displayName;
-    await user?.updateProfile(updateInfo);
-    await user?.reload();
+    await _user?.updateProfile(updateInfo);
+    await _user?.reload();
     _auth.currentUser().then((user) {
       setState(() {
-        profileState = ProfileState.still;
-        this.user = user;
+        _profileState = ProfileState.still;
+        this._user = user;
       });
     });
   }
 
   Future googleSignIn() async {
     setState(() {
-      authProvider = AuthProvider.google;
-      authState = AuthState.inProgress;
+      _authProvider = AuthProvider.google;
+      _authState = AuthState.inProgress;
     });
     FirebaseUser user = await _auth.currentUser();
     GoogleSignInAccount googleUser =
@@ -175,9 +219,9 @@ class AuthManagerState extends State<AuthManager> {
       );
     }
     setState(() {
-      this.user = user;
-      authState = AuthState.signedIn;
-      authProvider = null;
+      this._user = user;
+      _authState = AuthState.signedIn;
+      _authProvider = null;
     });
     checkGroups();
   }
@@ -189,27 +233,27 @@ class AuthManagerState extends State<AuthManager> {
     VoidCallback onError,
   }) async {
     setState(() {
-      authProvider = AuthProvider.phone;
-      authState = AuthState.inProgress;
+      _authProvider = AuthProvider.phone;
+      _authState = AuthState.inProgress;
     });
     _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       timeout: const Duration(seconds: 60),
       verificationCompleted: (newUser) {
         setState(() {
-          user = newUser;
-          authState = AuthState.signedIn;
-          authProvider = null;
+          _user = newUser;
+          _authState = AuthState.signedIn;
+          _authProvider = null;
         });
         checkGroups();
         onSuccess();
       },
       verificationFailed: (exception) {
         print('${exception.code}: ${exception.message}');
-        if (authState == AuthState.inProgress) {
+        if (_authState == AuthState.inProgress) {
           setState(() {
-            authState = AuthState.none;
-            authProvider = null;
+            _authState = AuthState.none;
+            _authProvider = null;
           });
           onError();
         }
@@ -249,7 +293,7 @@ class AuthManagerState extends State<AuthManager> {
             FlatButton(
               child: Text('CREATE'),
               onPressed: () {
-                _createGroup(_inputController.text,);
+                _createGroup(_inputController.text);
                 Navigator.of(ctx).pop();
               },
             ),
@@ -285,32 +329,32 @@ class AuthManagerState extends State<AuthManager> {
     DocumentReference groupRef = _db.collection('groups').document(id);
     DocumentSnapshot doc = await groupRef.get();
     if (!doc.exists) return;
-    if (doc.data['creator'] == user.uid) return;
-    List<Group> groups = List.of(this.groups);
+    if (doc.data['creator'] == _user.uid) return;
+    List<Group> groups = List.of(this._groups);
     if (groups.any((g) => g.uid == groupRef.documentID)) return;
     groups.add(Group(
       groupRef.documentID,
       doc.data['name'],
       doc.data['creator'],
     ));
-    await _db.collection('users').document(user.uid).setData({
+    await _db.collection('users').document(_user.uid).setData({
       'groups': _groupsToRefs(groups),
     });
     setState(() {
-      this.groups = groups;
+      this._groups = groups;
     });
   }
 
   void leaveGroup(Group group) async {
     if (group == null) return;
-    List<Group> groups = List.of(this.groups);
+    List<Group> groups = List.of(this._groups);
     if (!groups.contains(group)) return;
     groups.remove(group);
-    await _db.collection('users').document(user.uid).setData({
+    await _db.collection('users').document(_user.uid).setData({
       'groups': _groupsToRefs(groups),
     });
     setState(() {
-      this.groups = groups;
+      this._groups = groups;
     });
   }
 
@@ -398,7 +442,7 @@ class AuthManagerState extends State<AuthManager> {
               content: TextField(
                 autofocus: true,
                 keyboardType: TextInputType.phone,
-                enabled: !inProgress,
+                enabled: !_inProgress,
                 controller: _inputController,
               ),
               actions: <Widget>[
@@ -409,14 +453,14 @@ class AuthManagerState extends State<AuthManager> {
                   },
                 ),
                 FlatButton(
-                  child: inProgress
+                  child: _inProgress
                       ? SizedBox(
                           width: Theme.of(context).buttonTheme.height - 24.0,
                           height: Theme.of(context).buttonTheme.height - 24.0,
                           child: CircularProgressIndicator(strokeWidth: 2.0),
                         )
                       : Text('VERIFY'),
-                  onPressed: inProgress
+                  onPressed: _inProgress
                       ? null
                       : () {
                           _startPhoneSignIn(
@@ -457,7 +501,7 @@ class AuthManagerState extends State<AuthManager> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   TextFormField(
-                    initialValue: user?.displayName,
+                    initialValue: _user?.displayName,
                     decoration: InputDecoration(
                       labelText: 'Name',
                       border: OutlineInputBorder(),
@@ -482,14 +526,14 @@ class AuthManagerState extends State<AuthManager> {
                   },
                 ),
                 FlatButton(
-                  child: updating
+                  child: _updating
                       ? SizedBox(
                           width: Theme.of(context).buttonTheme.height - 24.0,
                           height: Theme.of(context).buttonTheme.height - 24.0,
                           child: CircularProgressIndicator(strokeWidth: 2.0),
                         )
                       : Text('UPDATE'),
-                  onPressed: updating
+                  onPressed: _updating
                       ? null
                       : () async {
                           if (Form.of(ctx).validate()) {
@@ -512,13 +556,17 @@ class AuthManagerState extends State<AuthManager> {
 
   @override
   Widget build(BuildContext context) {
+    String cell = PrefsModel.of(context, aspect: 'cell');
+    if (cell != _lastCell) {
+      _updateCell();
+      _lastCell = cell;
+    }
     return AuthModel(
       controller: this,
-      user: user,
-      groups: groups,
-      authState: authState,
-      authProvider: authProvider,
-      profileState: profileState,
+      user: _user,
+      groups: _groups,
+      authState: _authState,
+      authProvider: _authProvider,
       child: widget.child,
     );
   }
@@ -532,7 +580,6 @@ class AuthModel extends InheritedModel<String> {
     this.groups: const <Group>[],
     this.authState: AuthState.none,
     this.authProvider,
-    this.profileState: ProfileState.still,
     Widget child,
   }) : super(key: key, child: child);
 
@@ -541,21 +588,17 @@ class AuthModel extends InheritedModel<String> {
   final List<Group> groups;
   final AuthState authState;
   final AuthProvider authProvider;
-  final ProfileState profileState;
 
   bool get signedIn => user != null;
 
   bool get inProgress => authState == AuthState.inProgress;
-
-  bool get updating => profileState == ProfileState.updating;
 
   @override
   bool isSupportedAspect(Object aspect) {
     return aspect == 'user' ||
         aspect == 'groups' ||
         aspect == 'authState' ||
-        aspect == 'authProvider' ||
-        aspect == 'profileState';
+        aspect == 'authProvider';
   }
 
   @override
@@ -563,8 +606,7 @@ class AuthModel extends InheritedModel<String> {
     return user != old.user ||
         groups.length != old.groups.length ||
         authState != old.authState ||
-        authProvider != old.authProvider ||
-        profileState != old.profileState;
+        authProvider != old.authProvider;
   }
 
   @override
@@ -572,12 +614,22 @@ class AuthModel extends InheritedModel<String> {
     return (user != old.user && deps.contains('user')) ||
         (groups.length != old.groups.length && deps.contains('groups')) ||
         (authState != old.authState && deps.contains('authState')) ||
-        (authProvider != old.authProvider && deps.contains('authProvider')) ||
-        (profileState != old.profileState && deps.contains('profileState'));
+        (authProvider != old.authProvider && deps.contains('authProvider'));
   }
 
-  static AuthModel of(BuildContext context, {String aspect}) {
-    return InheritedModel.inheritFrom<AuthModel>(context, aspect: aspect);
+  static dynamic of(BuildContext context, {@required String aspect}) {
+    if (aspect == null) return null;
+    AuthModel model = InheritedModel.inheritFrom(context, aspect: aspect);
+    switch (aspect) {
+      case 'user':
+        return model.user;
+      case 'groups':
+        return model.groups;
+      case 'authState':
+        return model.authState;
+      case 'authProvider':
+        return model.authProvider;
+    }
   }
 }
 
@@ -591,4 +643,7 @@ class Group {
   final String uid;
   final String name;
   final String creator;
+
+  @override
+  String toString() => uid;
 }

@@ -8,16 +8,8 @@ class SettingsPage extends StatefulWidget {
   _SettingsState createState() => _SettingsState();
 }
 
-class _SettingsState extends State<SettingsPage>
-    with SingleTickerProviderStateMixin {
-  final Prefs _prefs = Prefs();
-  bool isDark;
-
-  @override
-  void initState() {
-    super.initState();
-    isDark = _prefs['isDark'] ?? false;
-  }
+class _SettingsState extends State<SettingsPage> {
+  PrefsModel _model;
 
   Widget _buildListItem(BuildContext context, int index) {
     switch (index) {
@@ -26,13 +18,10 @@ class _SettingsState extends State<SettingsPage>
           heading: 'INTERFACE',
           children: <Widget>[
             SwitchListTile(
-              title: const Text("Dark theme"),
-              value: isDark,
+              title: const Text('Dark theme'),
+              value: _model.get('isDark', false),
               onChanged: (value) {
-                _prefs['isDark'] = value;
-                setState(() {
-                  isDark = value;
-                });
+                _model.set('isDark', value);
               },
             ),
           ],
@@ -44,6 +33,7 @@ class _SettingsState extends State<SettingsPage>
 
   @override
   Widget build(BuildContext context) {
+    _model = PrefsModel.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('Settings'),

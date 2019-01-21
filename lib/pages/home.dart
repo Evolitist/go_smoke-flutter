@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../groups/chips.dart';
+import '../olc.dart' as olc;
+import '../services/auth.dart';
 import '../services/location.dart';
 import '../services/prefs.dart';
 import '../widgets/backdrop.dart';
@@ -14,22 +16,27 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final Prefs _prefs = Prefs();
   final Location _location = Location();
-  bool _gotStreamUpdate = false;
+  List<Group> _groups;
+  List<String> _lastLoc;
+  double _lat;
+  double _lng;
 
   @override
   void initState() {
     super.initState();
     _location.getLocationStream().then((stream) {
       stream.listen((update) {
-        _gotStreamUpdate = true;
-        _prefs['lastLoc'] = <String>[
-          update.latitude.toString(),
-          update.longitude.toString(),
-        ];
+        _lat = update.latitude;
+        _lng = update.longitude;
+        PrefsManager.of(context)
+          ..set('lastLoc', <String>[
+            _lat.toString(),
+            _lng.toString(),
+          ])
+          ..set('cell', olc.encode(_lat, _lng, codeLength: 8));
       }).onDone(() {
-        if (!_gotStreamUpdate) {
+        if (_lastLoc == null) {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -47,13 +54,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  void dispose() {
-    _prefs.stop('lastLoc');
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    _groups = AuthModel.of(context, aspect: 'groups');
     return Backdrop(
       frontLayer: MapboxMap(),
       backLayer: Column(
@@ -71,12 +73,50 @@ class _HomePageState extends State<HomePage> {
           ),
           FilterChipBlock(
             labelText: 'Groups',
-            names: ['one', 'two', 'three'],
+            objects: _groups,
+            objectToName: (g) => g.name,
           ),
         ],
       ),
       fab: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+                  title: Text('Data to be sent'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        'senderId: ${AuthModel.of(context, aspect: 'user').uid}',
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        'groups: ${PrefsModel.of(context, aspect: 'Groups')}',
+                        textAlign: TextAlign.center,
+                      ),
+                      Text('senderLat: $_lat'),
+                      Text('senderLng: $_lng'),
+                    ],
+                  ),
+                  actions: <Widget>[
+                    FlatButton(
+                      child: Text('OK'),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+          );
+          /*CloudFunctions.instance.call(
+            functionName: 'performPrimaryAction',
+            parameters: {
+              'senderId': AuthModel.of(context, aspect: 'user').uid,
+              'groups': <String>[],
+              'senderLat': _lat,
+              'senderLng': _lng,
+            },
+          );*/
+        },
         tooltip: 'GO',
         child: Icon(Icons.smoking_rooms),
       ),
