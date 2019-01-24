@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import '../a/a.dart';
 import '../services/auth.dart';
 
-const _tabs = ['GROUPS', 'MANAGE'];
-
 class ProfilePage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  PageController _pager = PageController();
   AuthManagerState _authManager;
   FirebaseUser _currentUser;
   List<Group> _groups;
+  int _currentPage = 0;
 
   bool get signedIn => _currentUser != null;
 
@@ -26,73 +26,55 @@ class _ProfilePageState extends State<ProfilePage> {
           iconTheme: Theme.of(context).iconTheme,
           textTheme: Theme.of(context).textTheme,
           forceElevated: isScrolled,
-          expandedHeight: signedIn ? 176.0 + kTextTabBarHeight : null,
-          flexibleSpace: Builder(
-            builder: (ctx) {
-              FlexibleSpaceBarSettings set =
-                  ctx.inheritFromWidgetOfExactType(FlexibleSpaceBarSettings);
-              return FlexibleSpaceBar(
-                background: SafeArea(
-                  child: Column(
-                    children: <Widget>[
-                      SizedBox(
-                        height: 16.0,
-                      ),
-                      UserAvatar(photoUrl: _currentUser?.photoUrl ?? ''),
-                    ],
+          expandedHeight: signedIn ? 176.0 : null,
+          flexibleSpace: FlexibleSpaceBar(
+            background: SafeArea(
+              child: Column(
+                children: <Widget>[
+                  SizedBox(
+                    height: 16.0,
+                  ),
+                  UserAvatar(photoUrl: _currentUser?.photoUrl ?? ''),
+                ],
+              ),
+            ),
+            title: Row(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Expanded(child: Container()),
+                Text(
+                  _currentUser?.displayName ??
+                      _currentUser?.phoneNumber ??
+                      'Welcome',
+                  style: Theme.of(context).textTheme.title,
+                ),
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.bottomLeft,
+                    padding: EdgeInsets.fromLTRB(8.0, 0.0, 0.0, 1.0),
+                    child: signedIn
+                        ? InkResponse(
+                            onTap: () {
+                              _authManager.editProfile(context);
+                            },
+                            highlightColor: Colors.transparent,
+                            child: Padding(
+                              padding: EdgeInsets.all(1.0),
+                              child: Icon(
+                                Icons.edit,
+                                size: 18.0,
+                                color: Theme.of(context).iconTheme.color,
+                              ),
+                            ),
+                            radius: 16.0,
+                          )
+                        : null,
                   ),
                 ),
-                title: Padding(
-                  padding: signedIn
-                      ? EdgeInsets.only(
-                          bottom: (kTextTabBarHeight / 1.5) *
-                              (1.0 +
-                                  (1.0 -
-                                          (set.currentExtent - set.minExtent) /
-                                              (set.maxExtent - set.minExtent)) *
-                                      0.5),
-                        )
-                      : EdgeInsets.zero,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      Expanded(child: Container()),
-                      Text(
-                        _currentUser?.displayName ??
-                            _currentUser?.phoneNumber ??
-                            'Welcome',
-                        style: Theme.of(context).textTheme.title,
-                      ),
-                      Expanded(
-                        child: Container(
-                          alignment: Alignment.bottomLeft,
-                          padding: EdgeInsets.fromLTRB(8.0, 0.0, 0.0, 1.0),
-                          child: signedIn
-                              ? InkResponse(
-                                  onTap: () {
-                                    _authManager.editProfile(context);
-                                  },
-                                  highlightColor: Colors.transparent,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(1.0),
-                                    child: Icon(
-                                      Icons.edit,
-                                      size: 18.0,
-                                      color: Theme.of(context).iconTheme.color,
-                                    ),
-                                  ),
-                                  radius: 16.0,
-                                )
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                centerTitle: true,
-              );
-            },
+              ],
+            ),
+            centerTitle: true,
           ),
           actions: <Widget>[
             IconButton(
@@ -104,12 +86,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   : null,
             ),
           ],
-          bottom: signedIn
-              ? TabBar(
-                  labelColor: Theme.of(context).textTheme.title.color,
-                  tabs: _tabs.map((s) => Tab(text: s)).toList(),
-                )
-              : null,
+          bottom: PreferredSize(
+            child: Divider(height: 0.0),
+            preferredSize: Size.fromHeight(1.0),
+          ),
           pinned: true,
         ),
       ),
@@ -159,61 +139,85 @@ class _ProfilePageState extends State<ProfilePage> {
     _currentUser = AuthModel.of(context, aspect: 'user');
     _groups = List.castFrom(AuthModel.of(context, aspect: 'groups'));
     return Scaffold(
-      body: DefaultTabController(
-        length: _tabs.length,
-        child: NestedScrollView(
-          headerSliverBuilder: _buildHeader,
-          body: signedIn
-              ? TabBarView(
-                  children: _tabs.map((name) {
-                    if (name == 'MANAGE') return Container();
-                    return Builder(
-                      builder: (ctx) {
-                        return ScrollConfiguration(
-                          behavior: NoOverscrollBehavior(),
-                          child: CustomScrollView(
-                            slivers: <Widget>[
-                              SliverOverlapInjector(
-                                handle: NestedScrollView
-                                    .sliverOverlapAbsorberHandleFor(ctx),
+      body: NestedScrollView(
+        headerSliverBuilder: _buildHeader,
+        body: signedIn
+            ? PageView(
+                physics: NeverScrollableScrollPhysics(),
+                controller: _pager,
+                children: [
+                  Builder(
+                    builder: (ctx) {
+                      return ScrollConfiguration(
+                        behavior: ScrollBehavior(),
+                        child: CustomScrollView(
+                          slivers: <Widget>[
+                            SliverOverlapInjector(
+                              handle: NestedScrollView
+                                  .sliverOverlapAbsorberHandleFor(ctx),
+                            ),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (ctx, i) => _createGroupTile(ctx, _groups[i]),
+                                childCount: _groups.length,
                               ),
-                              SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (ctx, i) => _createGroupTile(ctx, _groups[i]),
-                                  childCount: _groups.length,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  }).toList(),
-                )
-              : Column(
-                  children: <Widget>[
-                    Spacer(),
-                    _GoogleLoginButton(authManager: _authManager),
-                    SizedBox(
-                      height: 16.0,
-                      child: FractionallySizedBox(
-                        widthFactor: 0.4,
-                        child: Divider(),
-                      ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  Container(),
+                ],
+              )
+            : Column(
+                children: <Widget>[
+                  Spacer(),
+                  _GoogleLoginButton(authManager: _authManager),
+                  SizedBox(
+                    height: 16.0,
+                    child: FractionallySizedBox(
+                      widthFactor: 0.4,
+                      child: Divider(),
                     ),
-                    _PhoneLoginButton(authManager: _authManager),
-                    Spacer(),
-                  ],
-                ),
-        ),
+                  ),
+                  _PhoneLoginButton(authManager: _authManager),
+                  Spacer(),
+                ],
+              ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'AnotherTag',
-        child: Icon(Icons.add),
-        onPressed: () {
-          _authManager.createGroup(context);
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentPage,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.group),
+            title: Text('Groups'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            title: Text('Manage'),
+          ),
+        ],
+        onTap: (index) {
+          setState(() {
+            _currentPage = index;
+          });
+          _pager.animateToPage(
+            _currentPage,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
         },
       ),
+      floatingActionButton: _currentPage == 0
+          ? FloatingActionButton(
+              heroTag: null,
+              child: Icon(Icons.add),
+              onPressed: () {
+                _authManager.createGroup(context);
+              },
+            )
+          : null,
     );
   }
 }
