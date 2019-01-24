@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final Location _location = Location();
+  StreamSubscription _currentStream;
   List<Group> _groups;
   List<String> _lastLoc;
   double _lat;
@@ -26,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _location.getLocationStream().then((stream) {
-      stream.listen((update) {
+      _currentStream = stream.listen((update) {
         _lat = update.latitude;
         _lng = update.longitude;
         PrefsManager.of(context)
@@ -36,7 +38,7 @@ class _HomePageState extends State<HomePage> {
             update.accuracy.toString(),
           ])
           ..set('cell', olc.encode(_lat, _lng, codeLength: 8));
-      }).onDone(() {
+      })..onDone(() {
         if (_lastLoc == null) {
           showDialog(
             context: context,
@@ -52,6 +54,12 @@ class _HomePageState extends State<HomePage> {
         }
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _currentStream.cancel();
+    super.dispose();
   }
 
   @override
