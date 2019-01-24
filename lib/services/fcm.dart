@@ -39,6 +39,12 @@ class FCM {
           ),
         );
       },
+      onLaunch: (message) {
+        print(message);
+      },
+      onResume: (message) {
+        print(message);
+      },
     );
     _firebaseMessaging.onTokenRefresh.listen(tokenCallback);
   }

@@ -33,6 +33,7 @@ class _HomePageState extends State<HomePage> {
           ..set('lastLoc', <String>[
             _lat.toString(),
             _lng.toString(),
+            update.accuracy.toString(),
           ])
           ..set('cell', olc.encode(_lat, _lng, codeLength: 8));
       }).onDone(() {
@@ -57,7 +58,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     _groups = AuthModel.of(context, aspect: 'groups');
     return Backdrop(
-      frontLayer: MapboxMap(),
+      frontLayer: LiveMap(),
       backLayer: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

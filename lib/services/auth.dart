@@ -5,11 +5,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info/device_info.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../widgets/map.dart';
+import 'fcm.dart';
 import 'prefs.dart';
 
 export 'package:firebase_auth/firebase_auth.dart';
@@ -38,7 +39,9 @@ class AuthManager extends StatefulWidget {
   }
 }
 
-class AuthManagerState extends State<AuthManager> {
+class AuthManagerState extends State<AuthManager>
+    with SingleTickerProviderStateMixin {
+  final FCM _fcm = FCM();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Firestore _db = Firestore.instance;
   final GoogleSignIn _googleAuth = GoogleSignIn();
@@ -60,6 +63,9 @@ class AuthManagerState extends State<AuthManager> {
   @override
   void initState() {
     super.initState();
+    _fcm.init((token) {
+      _notificationId = token;
+    });
     if (Platform.isIOS) {
       DeviceInfoPlugin().iosInfo.then((info) {
         _deviceId = info.identifierForVendor;
@@ -74,9 +80,6 @@ class AuthManagerState extends State<AuthManager> {
         _user = currentUser;
       });
       checkGroups();
-    });
-    FirebaseMessaging().getToken().then((token) {
-      _notificationId = token;
     });
   }
 
@@ -98,6 +101,7 @@ class AuthManagerState extends State<AuthManager> {
         groups.add(Group(
           gDoc.documentID,
           gDoc.data['name'],
+          gDoc.data['location'],
           gDoc.data['creator'],
         ));
       }
@@ -109,7 +113,6 @@ class AuthManagerState extends State<AuthManager> {
       await doc.reference.setData(doc.data..['devices'] = devices);
     } else {
       doc.reference.setData({
-        'displayName': _user.displayName ?? '',
         'groups': _groupsToRefs(groups),
         'devices': {
           _deviceId: {
@@ -133,12 +136,12 @@ class AuthManagerState extends State<AuthManager> {
     await userRef.setData(doc.data..['devices'][_deviceId] = device);
   }
 
-  Future _createGroup(String name) async {
+  Future _createGroup(String name, GeoPoint location) async {
     //TODO: limit group creations per user
     DocumentReference groupRef = _db.collection('groups').document()
-      ..setData({'name': name, 'creator': _user.uid});
+      ..setData({'name': name, 'location': location, 'creator': _user.uid});
     List<Group> groups = List.of(this._groups)
-      ..add(Group(groupRef.documentID, name, _user.uid));
+      ..add(Group(groupRef.documentID, name, location, _user.uid));
     await _db
         .collection('users')
         .document(_user.uid)
@@ -271,33 +274,158 @@ class AuthManagerState extends State<AuthManager> {
   }
 
   void createGroup(BuildContext context) {
-    _inputController.clear();
+    //TODO: move this dialog to different file
+    PageController pager = PageController();
+    double viewportHeight = 84.0;
+    FocusNode textInput = FocusNode();
+    FocusNode locationInput = FocusNode();
+    String nextBtnText = 'NEXT';
+    String prevBtnText = 'CANCEL';
+    String savedName = '';
+    var savedLocation;
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: Text('Enter new group name'),
-          content: TextField(
-            autofocus: true,
-            keyboardType: TextInputType.text,
-            autocorrect: false,
-            controller: _inputController,
+        return Form(
+          child: StatefulBuilder(
+            builder: (ctx, setDialogState) {
+              return AlertDialog(
+                title: Text('Create group'),
+                content: AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: 280.0,
+                  height: viewportHeight,
+                  child: PageView(
+                    controller: pager,
+                    physics: NeverScrollableScrollPhysics(),
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.only(top: 4.0),
+                        child: TextFormField(
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          initialValue: savedName,
+                          autovalidate: true,
+                          validator: (text) => text.isEmpty
+                              ? 'Group name must not be empty'
+                              : null,
+                          keyboardType: TextInputType.text,
+                          autocorrect: false,
+                          textInputAction: TextInputAction.next,
+                          focusNode: textInput,
+                          onSaved: (text) {
+                            savedName = text;
+                          },
+                          onFieldSubmitted: (_) {
+                            if (Form.of(ctx).validate()) {
+                              Form.of(ctx).save();
+                              pager
+                                  .nextPage(
+                                duration: Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              )
+                                  .whenComplete(() {
+                                FocusScope.of(ctx).requestFocus(locationInput);
+                              });
+                              setDialogState(() {
+                                nextBtnText = 'CREATE';
+                                prevBtnText = 'BACK';
+                                viewportHeight = 280.0;
+                              });
+                              textInput.unfocus();
+                            }
+                          },
+                        ),
+                      ),
+                      FormField(
+                        builder: (state) {
+                          return Padding(
+                            padding: EdgeInsets.only(top: 4.0, bottom: 32.0),
+                            child: SelectorMap(
+                              zoom: 16.0,
+                              focusNode: locationInput,
+                              decoration: InputDecoration(
+                                labelText: 'Location',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              onInteract: (loc) {
+                                state.didChange(loc);
+                              },
+                            ),
+                          );
+                        },
+                        onSaved: (loc) {
+                          savedLocation = loc;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  FlatButton(
+                    child: Text(prevBtnText),
+                    onPressed: () {
+                      if (pager.page == 0) {
+                        Navigator.of(ctx).pop();
+                      } else {
+                        pager
+                            .previousPage(
+                          duration: Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        )
+                            .whenComplete(() {
+                          FocusScope.of(ctx).requestFocus(textInput);
+                        });
+                        setDialogState(() {
+                          nextBtnText = 'NEXT';
+                          prevBtnText = 'CANCEL';
+                          viewportHeight = 84.0;
+                        });
+                      }
+                    },
+                  ),
+                  FlatButton(
+                    child: Text(nextBtnText),
+                    onPressed: () {
+                      if (Form.of(ctx).validate()) {
+                        Form.of(ctx).save();
+                        if (pager.page == 0) {
+                          pager
+                              .nextPage(
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          )
+                              .whenComplete(() {
+                            FocusScope.of(ctx).requestFocus(locationInput);
+                          });
+                          setDialogState(() {
+                            nextBtnText = 'CREATE';
+                            prevBtnText = 'BACK';
+                            viewportHeight = 280.0;
+                          });
+                          textInput.unfocus();
+                        } else {
+                          _createGroup(
+                            savedName,
+                            GeoPoint(
+                              savedLocation.latitude,
+                              savedLocation.longitude,
+                            ),
+                          );
+                          Navigator.of(ctx).pop();
+                        }
+                      }
+                    },
+                  ),
+                ],
+              );
+            },
           ),
-          actions: <Widget>[
-            FlatButton(
-              child: Text('CANCEL'),
-              onPressed: () {
-                Navigator.of(ctx).pop();
-              },
-            ),
-            FlatButton(
-              child: Text('CREATE'),
-              onPressed: () {
-                _createGroup(_inputController.text);
-                Navigator.of(ctx).pop();
-              },
-            ),
-          ],
         );
       },
     );
@@ -335,6 +463,7 @@ class AuthManagerState extends State<AuthManager> {
     groups.add(Group(
       groupRef.documentID,
       doc.data['name'],
+      doc.data['location'],
       doc.data['creator'],
     ));
     await _db.collection('users').document(_user.uid).setData({
@@ -635,13 +764,19 @@ class AuthModel extends InheritedModel<String> {
 
 @immutable
 class Group {
-  const Group(this.uid, this.name, this.creator)
-      : assert(uid != null),
+  const Group(
+    this.uid,
+    this.name,
+    this.location,
+    this.creator,
+  )   : assert(uid != null),
         assert(name != null),
+        assert(location != null),
         assert(creator != null);
 
   final String uid;
   final String name;
+  final GeoPoint location;
   final String creator;
 
   @override

@@ -8,10 +8,13 @@ class Notifications {
   factory Notifications() => _singleton;
 
   Notifications._() {
-    _notifications.initialize(InitializationSettings(
-      AndroidInitializationSettings('ic_notification'),
-      IOSInitializationSettings(),
-    ));
+    _notifications.initialize(
+        InitializationSettings(
+          AndroidInitializationSettings('ic_notification'),
+          IOSInitializationSettings(),
+        ), onSelectNotification: (payload) {
+      print('tapped notification, data - $payload');
+    });
   }
 
   void show(int id, String title, String body,
