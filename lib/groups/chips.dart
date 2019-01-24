@@ -55,8 +55,8 @@ class _FilterChipBlockState extends State<FilterChipBlock> {
                 label: Text(widget.objectToName(widget.objects[i])),
                 selected: _selected[widget.objects[i]],
                 onSelected: (b) {
-                    _selected[widget.objects[i]] = b;
-                    _selectedCount += b ? 1 : -1;
+                  _selected[widget.objects[i]] = b;
+                  _selectedCount += b ? 1 : -1;
                   PrefsManager.of(context).set(
                     widget.labelText,
                     _selected.entries

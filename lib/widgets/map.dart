@@ -1,8 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 
+import '../services/auth.dart';
 import '../services/prefs.dart';
+import 'circle_layer.dart';
 
 class LiveMap extends StatefulWidget {
   LiveMap({
@@ -22,16 +26,31 @@ class LiveMap extends StatefulWidget {
 class _LiveMapState extends State<LiveMap> {
   final MapController _mapController = MapController();
   LatLng _latLng = LatLng(0.0, 0.0);
-
-  //double _accuracy = 0.0;
+  List<Group> _groups;
+  List<dynamic> _selectedGroups;
+  double _accuracy = 0.0;
 
   void _parse(List<String> data) {
     _latLng = LatLng(double.tryParse(data[0]), double.tryParse(data[1]));
-    //_accuracy = double.tryParse(data[2]);
+    _accuracy = double.tryParse(data[2]);
+  }
+
+  double _metersToPixels(double meters, double latitude, double zoom) {
+    return meters *
+        256.0 /
+        (math.cos(degToRadian(latitude)) *
+            (EARTH_RADIUS * 2 * PI) /
+            math.pow(2, zoom));
   }
 
   @override
   Widget build(BuildContext context) {
+    _groups = AuthModel.of(context, aspect: 'groups');
+    _selectedGroups = PrefsModel.of(
+      context,
+      aspect: 'Groups',
+      defaultValue: [],
+    );
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     _parse(
       List.castFrom(
@@ -49,6 +68,9 @@ class _LiveMapState extends State<LiveMap> {
           options: MapOptions(
             center: _latLng,
             zoom: widget.zoom,
+            plugins: [
+              BorderCircleLayerPlugin(),
+            ],
           ),
           layers: <LayerOptions>[
             TileLayerOptions(
@@ -61,26 +83,56 @@ class _LiveMapState extends State<LiveMap> {
                 'id': 'mapbox.${isDark ? 'dark' : 'light'}',
               },
             ),
+            BorderCircleLayerOptions(
+              circles: _groups.map((group) {
+                bool selected = _selectedGroups.contains(group.uid);
+                return BorderCircleMarker(
+                  point: LatLng(
+                    group.location.latitude,
+                    group.location.longitude,
+                  ),
+                  radius: _metersToPixels(100.0, group.location.latitude,
+                      _mapController.ready ? _mapController.zoom : widget.zoom),
+                  color: Colors.orange.withAlpha(selected ? 63 : 31),
+                  borderStrokeWidth: selected ? 4.0 : 1.0,
+                  borderColor: Colors.orange.withAlpha(127),
+                );
+              }).toList()
+                ..add(
+                  BorderCircleMarker(
+                    point: _latLng,
+                    radius: _metersToPixels(
+                        _accuracy,
+                        _latLng.latitude,
+                        _mapController.ready
+                            ? _mapController.zoom
+                            : widget.zoom),
+                    color: Colors.blue.withAlpha(31),
+                    borderStrokeWidth: 1.0,
+                    borderColor: Colors.blue.withAlpha(127),
+                  ),
+                ),
+            ),
+            MarkerLayerOptions(
+              markers: _groups.map((group) {
+                return Marker(
+                  point: LatLng(
+                    group.location.latitude,
+                    group.location.longitude,
+                  ),
+                  builder: (ctx) => Center(
+                        child: Text(
+                          group.name,
+                        ),
+                      ),
+                  width: 128.0,
+                  height: 128.0,
+                  anchor: AnchorPos.center,
+                );
+              }).toList(),
+            ),
             MarkerLayerOptions(
               markers: <Marker>[
-                //TODO: enable in future release
-                /*Marker(
-              point: _latLng,
-              builder: (ctx) => Material(
-                    elevation: 1.0,
-                    shape: CircleBorder(
-                      side: BorderSide(color: Colors.blue.withAlpha(127)),
-                    ),
-                    color: Colors.blue.withAlpha(31),
-                  ),
-              width: _accuracy /
-                  8.0 *
-                  (_mapController.ready ? _mapController.zoom : widget.zoom),
-              height: _accuracy /
-                  8.0 *
-                  (_mapController.ready ? _mapController.zoom : widget.zoom),
-              anchor: AnchorPos.center,
-            ),*/
                 Marker(
                   point: _latLng,
                   builder: (context) {
