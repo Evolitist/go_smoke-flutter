@@ -87,15 +87,12 @@ class _LiveMapState extends State<LiveMap> {
               circles: _groups.map((group) {
                 bool selected = _selectedGroups.contains(group.uid);
                 return BorderCircleMarker(
-                  point: LatLng(
-                    group.location.latitude,
-                    group.location.longitude,
-                  ),
+                  point: group.location,
                   radius: _metersToPixels(100.0, group.location.latitude,
                       _mapController.ready ? _mapController.zoom : widget.zoom),
                   color: Colors.orange.withAlpha(selected ? 63 : 31),
                   hardBorder: selected,
-                  borderWidth: selected ? 4.0 : 8.0,
+                  borderWidth: selected ? 4.0 : 16.0,
                   borderColor: Colors.orange,
                 );
               }).toList()
@@ -118,10 +115,7 @@ class _LiveMapState extends State<LiveMap> {
             MarkerLayerOptions(
               markers: _groups.map((group) {
                 return Marker(
-                  point: LatLng(
-                    group.location.latitude,
-                    group.location.longitude,
-                  ),
+                  point: group.location,
                   builder: (ctx) => Center(
                         child: Text(
                           group.name,

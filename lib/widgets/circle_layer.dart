@@ -50,6 +50,7 @@ class BorderCircleLayer extends StatelessWidget {
   final BorderCircleLayerOptions circleOpts;
   final MapState map;
 
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints bc) {
@@ -71,7 +72,7 @@ class BorderCircleLayer extends StatelessWidget {
                   map.getPixelOrigin();
               circle.offset = Offset(pos.x.toDouble(), pos.y.toDouble());
               return CustomPaint(
-                painter: CirclePainter(circle),
+                painter: CirclePainter(circle, map.zoom),
                 size: size,
               );
             }).toList(),
@@ -83,9 +84,10 @@ class BorderCircleLayer extends StatelessWidget {
 }
 
 class CirclePainter extends CustomPainter {
-  CirclePainter(this.circle);
+  CirclePainter(this.circle, this.zoom);
 
   final BorderCircleMarker circle;
+  final double zoom;
 
   void _drawFill(Canvas canvas) {
     final paint = Paint()
@@ -113,7 +115,7 @@ class CirclePainter extends CustomPainter {
       }
     } else {
       if (circle.borderWidth > 0.0) {
-        final borderPaint = Paint()
+        final gradientPaint = Paint()
           ..style = PaintingStyle.fill
           ..color = circle.color.withOpacity(1.0)
           ..shader = Gradient.radial(
@@ -128,7 +130,7 @@ class CirclePainter extends CustomPainter {
               1.0,
             ],
           );
-        canvas.drawCircle(circle.offset, circle.radius, borderPaint);
+        canvas.drawCircle(circle.offset, circle.radius, gradientPaint);
       } else {
         _drawFill(canvas);
       }
@@ -136,5 +138,5 @@ class CirclePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CirclePainter other) => false;
+  bool shouldRepaint(CirclePainter other) => zoom != other.zoom;
 }

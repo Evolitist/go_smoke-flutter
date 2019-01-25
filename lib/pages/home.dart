@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
 
@@ -83,7 +83,8 @@ class _HomePageState extends State<HomePage> {
           FilterChipBlock(
             labelText: 'Groups',
             objects: _groups,
-            objectToName: (g) => g.name,
+            objectToName: (i) => _groups[i].name,
+            enabled: (i) => _groups[i].inCallRange(_lat, _lng),
           ),
         ],
       ),
@@ -104,8 +105,6 @@ class _HomePageState extends State<HomePage> {
                         'groups: ${PrefsModel.of(context, aspect: 'Groups')}',
                         textAlign: TextAlign.center,
                       ),
-                      Text('senderLat: $_lat'),
-                      Text('senderLng: $_lng'),
                     ],
                   ),
                   actions: <Widget>[

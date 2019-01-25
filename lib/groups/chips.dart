@@ -5,7 +5,8 @@ import '../services/prefs.dart';
 class FilterChipBlock extends StatefulWidget {
   final String labelText;
   final List<Object> objects;
-  final String Function(dynamic t) objectToName;
+  final String Function(int i) objectToName;
+  final bool Function(int i) enabled;
   final bool showCounter;
   final ValueSetter<int> onSelected;
 
@@ -14,7 +15,8 @@ class FilterChipBlock extends StatefulWidget {
     this.labelText,
     @required this.objects,
     @required this.objectToName,
-    this.showCounter = false,
+    this.enabled,
+    this.showCounter: false,
     this.onSelected,
   })  : assert(objects != null),
         super(key: key);
@@ -24,51 +26,62 @@ class FilterChipBlock extends StatefulWidget {
 }
 
 class _FilterChipBlockState extends State<FilterChipBlock> {
-  Map<Object, bool> _selected = Map();
-  int _selectedCount = 0;
-
   @override
   Widget build(BuildContext context) {
-    if (_selected.length != widget.objects.length) {
-      _selected.removeWhere((key, _) {
-        return !widget.objects.contains(key);
-      });
-      widget.objects.forEach((o) {
-        if (!_selected.containsKey(o)) {
-          _selected[o] = false;
-        }
-      });
+    List<String> selection = List.castFrom(PrefsModel.of(
+      context,
+      aspect: widget.labelText,
+      defaultValue: <String>[],
+    ));
+    if (widget.objects.isEmpty) {
+      return Container();
     }
-    if (widget.objects.isEmpty) return Container();
+    bool Function(int i) enabled = widget.enabled ?? (i) => true;
     return InputDecorator(
       decoration: InputDecoration(
         labelText: widget.labelText,
-        counterText:
-            widget.showCounter ? '$_selectedCount/${_selected.length}' : null,
+        counterText: widget.showCounter
+            ? '${selection.length}/${widget.objects.length}'
+            : null,
         border: OutlineInputBorder(),
       ),
       child: Wrap(
         spacing: 8.0,
-        children: new List<Widget>.generate(
+        children: List.generate(
           widget.objects.length,
-          (i) => FilterChip(
-                label: Text(widget.objectToName(widget.objects[i])),
-                selected: _selected[widget.objects[i]],
-                onSelected: (b) {
-                  _selected[widget.objects[i]] = b;
-                  _selectedCount += b ? 1 : -1;
-                  PrefsManager.of(context).set(
-                    widget.labelText,
-                    _selected.entries
-                        .where((e) => e.value)
-                        .map((e) => e.key.toString())
-                        .toList(),
-                  );
-                  if (widget.onSelected != null) {
-                    widget.onSelected(i);
-                  }
-                },
-              ),
+          (i) {
+            String objectId = widget.objects[i].toString();
+            //TODO: implement geofence
+            /*if (selection.contains(objectId) && !enabled(i)) {
+              PrefsManager.of(
+                context,
+              ).set(
+                widget.labelText,
+                List.of(selection)..remove(objectId),
+              );
+            }*/
+            return FilterChip(
+              label: Text(widget.objectToName(i)),
+              selected: selection.contains(objectId),
+              onSelected: enabled(i) ? (b) {
+                List<String> newSelection = List.of(selection);
+                if (b) {
+                  newSelection.add(objectId);
+                } else {
+                  newSelection.remove(objectId);
+                }
+                PrefsManager.of(
+                  context,
+                ).set(
+                  widget.labelText,
+                  newSelection,
+                );
+                if (widget.onSelected != null) {
+                  widget.onSelected(i);
+                }
+              } : null,
+            );
+          },
           growable: false,
         ),
       ),
@@ -113,14 +126,14 @@ class _ChoiceChipBlockState extends State<ChoiceChipBlock> {
       ),
       child: Wrap(
         spacing: 8.0,
-        children: new List<Widget>.generate(
+        children: List.generate(
           widget.names.length,
           (i) {
             ThemeData theme = Theme.of(context);
             return ChoiceChip(
               label: Text(widget.names[i]),
               selected: _selected == i,
-              selectedColor: Colors.orange.withAlpha(0x3d),
+              selectedColor: Colors.orange.withOpacity(0.24),
               labelStyle: theme.chipTheme.labelStyle.copyWith(
                   color: theme.brightness == Brightness.light
                       ? Colors.black

@@ -8,6 +8,7 @@ import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:latlong/latlong.dart';
 
 import '../widgets/map.dart';
 import 'fcm.dart';
@@ -21,6 +22,8 @@ enum AuthProvider { google, phone }
 enum AuthState { none, inProgress, signedIn }
 
 enum ProfileState { still, updating }
+
+const Distance _distance = Distance();
 
 class AuthManager extends StatefulWidget {
   AuthManager({
@@ -136,12 +139,12 @@ class AuthManagerState extends State<AuthManager>
     await userRef.setData(doc.data..['devices'][_deviceId] = device);
   }
 
-  Future _createGroup(String name, GeoPoint location) async {
+  Future _createGroup(String name, LatLng location) async {
     //TODO: limit group creations per user
     DocumentReference groupRef = _db.collection('groups').document()
       ..setData({'name': name, 'location': location, 'creator': _user.uid});
     List<Group> groups = List.of(this._groups)
-      ..add(Group(groupRef.documentID, name, location, _user.uid));
+      ..add(Group.raw(groupRef.documentID, name, location, _user.uid));
     await _db
         .collection('users')
         .document(_user.uid)
@@ -412,10 +415,7 @@ class AuthManagerState extends State<AuthManager>
                         } else {
                           _createGroup(
                             savedName,
-                            GeoPoint(
-                              savedLocation.latitude,
-                              savedLocation.longitude,
-                            ),
+                            savedLocation,
                           );
                           Navigator.of(ctx).pop();
                         }
@@ -767,17 +767,34 @@ class Group {
   const Group(
     this.uid,
     this.name,
-    this.location,
+    this.geoPoint,
+    this.creator,
+  )   : assert(uid != null),
+        assert(name != null),
+        assert(geoPoint != null),
+        assert(creator != null);
+
+  Group.raw(
+    this.uid,
+    this.name,
+    LatLng location,
     this.creator,
   )   : assert(uid != null),
         assert(name != null),
         assert(location != null),
-        assert(creator != null);
+        assert(creator != null),
+        this.geoPoint = GeoPoint(location.latitude, location.longitude);
 
   final String uid;
   final String name;
-  final GeoPoint location;
+  final GeoPoint geoPoint;
   final String creator;
+
+  LatLng get location => LatLng(geoPoint.latitude, geoPoint.longitude);
+
+  bool inCallRange(double lat, double lng) {
+    return _distance.distance(location, LatLng(lat, lng)) <= 110.0;
+  }
 
   @override
   String toString() => uid;
