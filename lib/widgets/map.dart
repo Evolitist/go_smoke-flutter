@@ -94,8 +94,9 @@ class _LiveMapState extends State<LiveMap> {
                   radius: _metersToPixels(100.0, group.location.latitude,
                       _mapController.ready ? _mapController.zoom : widget.zoom),
                   color: Colors.orange.withAlpha(selected ? 63 : 31),
-                  borderStrokeWidth: selected ? 4.0 : 1.0,
-                  borderColor: Colors.orange.withAlpha(127),
+                  hardBorder: selected,
+                  borderWidth: selected ? 4.0 : 8.0,
+                  borderColor: Colors.orange,
                 );
               }).toList()
                 ..add(
@@ -108,7 +109,8 @@ class _LiveMapState extends State<LiveMap> {
                             ? _mapController.zoom
                             : widget.zoom),
                     color: Colors.blue.withAlpha(31),
-                    borderStrokeWidth: 1.0,
+                    hardBorder: true,
+                    borderWidth: 1.0,
                     borderColor: Colors.blue.withAlpha(127),
                   ),
                 ),
