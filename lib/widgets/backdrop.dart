@@ -121,8 +121,9 @@ class _BackdropState extends State<Backdrop> with TickerProviderStateMixin {
     return PaddingTransition(
       padding: layerAnimation,
       child: Material(
+        color: Colors.transparent,
         animationDuration: Duration(milliseconds: 300),
-        elevation: widget.fab.elevation,
+        elevation: 6,
         clipBehavior: Clip.antiAlias,
         shape: _layerShape,
         child: widget.frontLayer,

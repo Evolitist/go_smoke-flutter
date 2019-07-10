@@ -37,8 +37,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   }
 
   Future<void> _retrieveDynamicLink() async {
-    final PendingDynamicLinkData data =
-        await FirebaseDynamicLinks.instance.retrieveDynamicLink();
+    final PendingDynamicLinkData data = await FirebaseDynamicLinks.instance.retrieveDynamicLink();
     AuthManager.of(context).joinGroup(data?.link);
   }
 

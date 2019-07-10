@@ -8,7 +8,7 @@ import 'package:latlong/latlong.dart' hide Path;
 class BorderCircleLayerPlugin extends MapPlugin {
   @override
   Widget createLayer(
-      LayerOptions options, MapState mapState, Stream<Null> stream) {
+      LayerOptions options, MapState mapState, Stream<void> stream) {
     return BorderCircleLayer(options, mapState);
   }
 
@@ -61,7 +61,7 @@ class BorderCircleLayer extends StatelessWidget {
   }
 
   Widget _build(BuildContext context, Size size) {
-    return StreamBuilder<int>(
+    return StreamBuilder<void>(
       stream: map.onMoved,
       builder: (BuildContext context, _) {
         return Container(

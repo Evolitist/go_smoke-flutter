@@ -123,7 +123,7 @@ class _LiveMapState extends State<LiveMap> {
                       ),
                   width: 128.0,
                   height: 128.0,
-                  anchor: AnchorPos.center,
+                  anchorPos: AnchorPos.align(AnchorAlign.center),
                 );
               }).toList(),
             ),
@@ -142,7 +142,7 @@ class _LiveMapState extends State<LiveMap> {
                   },
                   width: 16.0,
                   height: 16.0,
-                  anchor: AnchorPos.center,
+                  anchorPos: AnchorPos.align(AnchorAlign.center),
                 ),
               ],
             ),
@@ -210,7 +210,6 @@ class _SelectorMapState extends State<SelectorMap> {
 
   @override
   Widget build(BuildContext context) {
-    FocusScope.of(context).reparentIfNeeded(_effectiveFocusNode);
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     _parse(
       List.castFrom(
@@ -231,8 +230,8 @@ class _SelectorMapState extends State<SelectorMap> {
         options: MapOptions(
           center: _latLng,
           zoom: widget.zoom,
-          onPositionChanged: (pos, b) {
-            if (b) {
+          onPositionChanged: (pos, b, b2) {
+            if (b && b2) {
               setState(() {});
               if (widget.onInteract != null) {
                 widget.onInteract(pos.center);
@@ -266,7 +265,7 @@ class _SelectorMapState extends State<SelectorMap> {
                 },
                 width: 16.0,
                 height: 16.0,
-                anchor: AnchorPos.center,
+                anchorPos: AnchorPos.align(AnchorAlign.center),
               ),
             ],
           ),

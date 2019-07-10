@@ -214,15 +214,16 @@ class AuthManagerState extends State<AuthManager>
         await _googleAuth.signInSilently() ?? await _googleAuth.signIn();
     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
     if (user == null) {
-      user = await _auth.signInWithGoogle(
+      AuthCredential cred = GoogleAuthProvider.getCredential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
+      user = await _auth.signInWithCredential(cred);
     } else {
-      user = await _auth.linkWithGoogleCredential(
+      /*user = await _auth.cr(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
-      );
+      );*/
     }
     setState(() {
       this._user = user;
@@ -245,7 +246,8 @@ class AuthManagerState extends State<AuthManager>
     _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       timeout: const Duration(seconds: 60),
-      verificationCompleted: (newUser) {
+      verificationCompleted: (cred) async {
+        FirebaseUser newUser = await _auth.signInWithCredential(cred);
         setState(() {
           _user = newUser;
           _authState = AuthState.signedIn;
@@ -273,11 +275,13 @@ class AuthManagerState extends State<AuthManager>
   }
 
   Future _verifyPhone(String code) async {
-    _auth.signInWithPhoneNumber(verificationId: _verificationId, smsCode: code);
+    AuthCredential cred = PhoneAuthProvider.getCredential(verificationId: _verificationId, smsCode: code);
+    _auth.signInWithCredential(cred);
   }
 
   void createGroup(BuildContext context) {
     //TODO: move this dialog to different file
+    // seems impossible as of now, researching
     PageController pager = PageController();
     double viewportHeight = 84.0;
     FocusNode textInput = FocusNode();
@@ -434,7 +438,7 @@ class AuthManagerState extends State<AuthManager>
   void inviteToGroup(BuildContext context, Group group) async {
     //TODO: allow generating per-user invite links
     var params = DynamicLinkParameters(
-      domain: 'gsmk.page.link',
+      uriPrefix: 'https://gsmk.page.link',
       link: Uri.parse(
           'https://evolitist.github.io/gosmoke/join?gid=${group.uid}'),
       androidParameters: AndroidParameters(
