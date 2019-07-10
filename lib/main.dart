@@ -74,6 +74,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
               builder: (ctx) => ProfilePage(),
             );
         }
+        return MaterialPageRoute(builder: (ctx) => const SizedBox());
       },
     );
   }

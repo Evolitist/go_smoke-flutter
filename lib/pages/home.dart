@@ -84,7 +84,7 @@ class _HomePageState extends State<HomePage> {
             labelText: 'Groups',
             objects: _groups,
             objectToName: (i) => _groups[i].name,
-            enabled: (i) => _groups[i].inCallRange(_lat, _lng),
+            enabled: (i) => _lat != null && _lng != null ? _groups[i].inCallRange(_lat, _lng) : false,
           ),
         ],
       ),

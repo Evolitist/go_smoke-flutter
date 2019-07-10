@@ -42,8 +42,7 @@ class AuthManager extends StatefulWidget {
   }
 }
 
-class AuthManagerState extends State<AuthManager>
-    with SingleTickerProviderStateMixin {
+class AuthManagerState extends State<AuthManager> with SingleTickerProviderStateMixin {
   final FCM _fcm = FCM();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Firestore _db = Firestore.instance;
@@ -213,17 +212,15 @@ class AuthManagerState extends State<AuthManager>
     GoogleSignInAccount googleUser =
         await _googleAuth.signInSilently() ?? await _googleAuth.signIn();
     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    AuthCredential cred = GoogleAuthProvider.getCredential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
     if (user == null) {
-      AuthCredential cred = GoogleAuthProvider.getCredential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
       user = await _auth.signInWithCredential(cred);
     } else {
-      /*user = await _auth.cr(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );*/
+      await user.linkWithCredential(cred);
+      await user.reload();
     }
     setState(() {
       this._user = user;

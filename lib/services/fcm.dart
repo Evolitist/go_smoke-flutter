@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'notifications.dart';
 
+//TODO: switch to native implementation
 class FCM {
   static final FCM _singleton = FCM._();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
@@ -22,7 +23,7 @@ class FCM {
       ),
     );
     _firebaseMessaging.configure(
-      onMessage: (message) {
+      onMessage: (message) async {
         print(message);
         _notifications.show(
           1,
@@ -39,10 +40,10 @@ class FCM {
           ),
         );
       },
-      onLaunch: (message) {
+      onLaunch: (message) async {
         print(message);
       },
-      onResume: (message) {
+      onResume: (message) async {
         print(message);
       },
     );
