@@ -97,7 +97,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
     DocumentSnapshot doc =
         await _db.collection('users').document(_user.uid).get();
     if (doc.exists) {
-      List<DocumentReference> newGroups = List.castFrom(doc.data['groups']);
+      List<DocumentReference> newGroups = List<String>.from(doc.data['groups']).map((s) => _db.collection('groups').document(s)).toList(growable: true);
       for (var doc in newGroups) {
         DocumentSnapshot gDoc = await doc.get();
         groups.add(Group(
@@ -217,7 +217,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
       idToken: googleAuth.idToken,
     );
     if (user == null) {
-      user = await _auth.signInWithCredential(cred);
+      user = (await _auth.signInWithCredential(cred)).user;
     } else {
       await user.linkWithCredential(cred);
       await user.reload();
@@ -244,7 +244,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
       phoneNumber: phoneNumber,
       timeout: const Duration(seconds: 60),
       verificationCompleted: (cred) async {
-        FirebaseUser newUser = await _auth.signInWithCredential(cred);
+        FirebaseUser newUser = (await _auth.signInWithCredential(cred)).user;
         setState(() {
           _user = newUser;
           _authState = AuthState.signedIn;

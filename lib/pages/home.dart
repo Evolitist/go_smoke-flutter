@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../groups/chips.dart';
 import '../olc.dart' as olc;
@@ -18,6 +18,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final Location _location = Location();
+  final List<String> _g = List();
   StreamSubscription _currentStream;
   List<Group> _groups;
   List<String> _lastLoc;
@@ -47,7 +48,7 @@ class _HomePageState extends State<HomePage> {
                   content:
                       Text('Location permission is reqired for app to work.'),
                   actions: <Widget>[
-                    FlatButton(onPressed: () => exit(0), child: Text('OK')),
+                    FlatButton(onPressed: () => SystemNavigator.pop(), child: Text('OK')),
                   ],
                 ),
           );
@@ -64,7 +65,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    _groups = AuthModel.of(context, aspect: 'groups');
     return Backdrop(
       frontLayer: LiveMap(),
       backLayer: Column(
@@ -80,17 +80,29 @@ class _HomePageState extends State<HomePage> {
           Container(
             height: 16.0,
           ),
-          FilterChipBlock(
-            labelText: 'Groups',
-            objects: _groups,
-            objectToName: (i) => _groups[i].name,
-            enabled: (i) => _lat != null && _lng != null ? _groups[i].inCallRange(_lat, _lng) : false,
+          StatefulBuilder(
+            builder: (ctx, setBlockState) {
+              _groups = AuthModel.of(ctx, aspect: 'groups');
+              return FilterChipBlock(
+                labelText: 'Groups',
+                names: _groups.map((g) => g.name).toList(growable: false),
+                states: _groups.map((g) => _g.contains(g.uid)).toList(growable: false),
+                enabled: (i) => _lat != null && _lng != null ? _groups[i].inCallRange(_lat, _lng) : false,
+                onSelected: (i) => setBlockState(() {
+                  if (_g.contains(_groups[i].uid)) {
+                    _g.remove(_groups[i].uid);
+                  } else {
+                    _g.add(_groups[i].uid);
+                  }
+                }),
+              );
+            }
           ),
         ],
       ),
       fab: FloatingActionButton(
-        onPressed: () {
-          showDialog(
+        onPressed: () async {
+          await showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
                   title: Text('Data to be sent'),
@@ -102,7 +114,7 @@ class _HomePageState extends State<HomePage> {
                         textAlign: TextAlign.center,
                       ),
                       Text(
-                        'groups: ${PrefsModel.of(context, aspect: 'Groups')}',
+                        'groups: $_g',
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -115,15 +127,20 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
           );
-          /*CloudFunctions.instance.call(
-            functionName: 'performPrimaryAction',
-            parameters: {
-              'senderId': AuthModel.of(context, aspect: 'user').uid,
-              'groups': <String>[],
-              'senderLat': _lat,
-              'senderLng': _lng,
-            },
-          );*/
+          /*CloudFunctions.instance.getHttpsCallable(functionName: 'performPrimaryAction').call({
+            'senderId': AuthModel.of(context, aspect: 'user').uid,
+            'groups': _g,
+            'senderLat': _lat,
+            'senderLng': _lng,
+          }).then((result) {
+            print(result.data);
+          }, onError: (e) {
+            if (e is CloudFunctionsException) {
+              print(e.code);
+              print(e.message);
+              print(e.details);
+            }
+          });*/
         },
         tooltip: 'GO',
         child: Icon(Icons.smoking_rooms),

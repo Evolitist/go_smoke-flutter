@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../a/a.dart';
 import '../services/auth.dart';
@@ -129,7 +130,36 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         },
       ),
-      onTap: () {},
+      onTap: () {
+        showDialog(
+          context: ctx,
+          builder: (ctx) {
+            return AlertDialog(
+              title: Text('Members'),
+              content: FutureBuilder<QuerySnapshot>(
+                future: Firestore.instance.collection('users').where('groups', arrayContains: group.uid).getDocuments(),
+                builder: (ctx, snap) {
+                  if (snap.hasData) {
+                    return Container(
+                      height: 100,
+                      width: 100,
+                      child: ListView(
+                        children: <Widget>[
+                          for (var s in snap.data.documents)
+                            ListTile(
+                              title: Text(s.documentID),
+                            ),
+                        ],
+                      ),
+                    );
+                  }
+                  return Container();
+                },
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
