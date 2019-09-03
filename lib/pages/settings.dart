@@ -20,9 +20,7 @@ class _SettingsState extends State<SettingsPage> {
             SwitchListTile(
               title: const Text('Dark theme'),
               value: _model.get('isDark', false),
-              onChanged: (value) {
-                _model.set('isDark', value);
-              },
+              onChanged: (value) => _model.set('isDark', value),
             ),
           ],
         );
@@ -36,10 +34,10 @@ class _SettingsState extends State<SettingsPage> {
     _model = PrefsModel.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
-        titleSpacing: 24.0,
+        title: const Text('Settings'),
+        titleSpacing: 24,
         centerTitle: true,
-        elevation: 0.0,
+        elevation: 0,
         textTheme: Theme.of(context).textTheme,
         iconTheme: Theme.of(context).iconTheme,
         backgroundColor: Theme.of(context).canvasColor,
@@ -70,21 +68,19 @@ class GroupListTile extends StatelessWidget {
       children: List.generate(children.length + 2, (index) {
         if (index == 0) {
           return Padding(
-            padding: EdgeInsets.fromLTRB(16.0, 28.0, 16.0, 4.0),
+            padding: EdgeInsets.fromLTRB(16, 28, 16, 4),
             child: Text(
               heading,
               style: Theme.of(context).textTheme.overline.copyWith(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           );
         } else if (index <= children.length) {
           return children[index - 1];
         } else if (index == children.length + 1) {
-          return Divider(
-            height: 0.0,
-          );
+          return const Divider(height: 0);
         } else {
           return null;
         }

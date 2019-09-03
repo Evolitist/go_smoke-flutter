@@ -36,14 +36,13 @@ class _FilterChipBlockState extends State<FilterChipBlock> {
         counterText: widget.showCounter
             ? '${widget.states.where((b) => b).length}/${widget.names.length}'
             : null,
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
       ),
       child: Wrap(
-        spacing: 8.0,
+        spacing: 8,
         children: List.generate(
           widget.names.length,
           (i) {
-            //TODO: implement geofence
             return FilterChip(
               label: Text(widget.names[i]),
               selected: widget.states[i],
@@ -94,10 +93,10 @@ class _ChoiceChipBlockState extends State<ChoiceChipBlock> {
     return InputDecorator(
       decoration: InputDecoration(
         labelText: widget.labelText,
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
       ),
       child: Wrap(
-        spacing: 8.0,
+        spacing: 8,
         children: List.generate(
           widget.names.length,
           (i) {
@@ -107,15 +106,14 @@ class _ChoiceChipBlockState extends State<ChoiceChipBlock> {
               selected: _selected == i,
               selectedColor: Colors.orange.withOpacity(0.24),
               labelStyle: theme.chipTheme.labelStyle.copyWith(
-                  color: theme.brightness == Brightness.light
-                      ? Colors.black
-                      : Colors.white),
+                color: theme.brightness == Brightness.light ? Colors.black : Colors.white,
+              ),
               shape: StadiumBorder(
-                  side: BorderSide(
-                      color: Colors.orange,
-                      style: _selected == i
-                          ? BorderStyle.solid
-                          : BorderStyle.none)),
+                side: BorderSide(
+                  color: Colors.orange,
+                  style: _selected == i ? BorderStyle.solid : BorderStyle.none,
+                ),
+              ),
               onSelected: (b) {
                 setState(() {
                   _selected = i;

@@ -26,7 +26,7 @@ enum ProfileState { still, updating }
 const Distance _distance = Distance();
 
 class AuthManager extends StatefulWidget {
-  AuthManager({
+  const AuthManager({
     Key key,
     this.child,
   }) : super(key: key);

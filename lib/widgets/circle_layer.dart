@@ -30,7 +30,7 @@ class BorderCircleMarker {
     @required this.radius,
     this.color: const Color(0xFF00FF00),
     this.hardBorder: false,
-    this.borderWidth: 0.0,
+    this.borderWidth: 0,
     this.borderColor: const Color(0xFFFFFF00),
   }) : assert(color != null),
         assert(borderWidth != null);
@@ -66,16 +66,14 @@ class BorderCircleLayer extends StatelessWidget {
       builder: (BuildContext context, _) {
         return Container(
           child: Stack(
-            children: circleOpts.circles.map((circle) {
-              var pos = map.project(circle.point);
-              pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) -
-                  map.getPixelOrigin();
-              circle.offset = Offset(pos.x.toDouble(), pos.y.toDouble());
-              return CustomPaint(
-                painter: CirclePainter(circle, map.zoom),
-                size: size,
-              );
-            }).toList(),
+            children: [
+              ...circleOpts.circles.map((circle) {
+                CustomPoint pos = map.project(circle.point);
+                pos = pos.multiplyBy(map.getZoomScale(map.zoom, map.zoom)) - map.getPixelOrigin();
+                circle.offset = Offset(pos.x.toDouble(), pos.y.toDouble());
+                return CustomPaint(painter: CirclePainter(circle, map.zoom), size: size);
+              })
+            ],
           ),
         );
       },
@@ -95,7 +93,7 @@ class CirclePainter extends CustomPainter {
       ..color = circle.color;
     canvas.drawCircle(
       circle.offset,
-      circle.radius - circle.borderWidth / 2.0,
+      circle.radius - circle.borderWidth / 2,
       paint,
     );
   }
@@ -106,7 +104,7 @@ class CirclePainter extends CustomPainter {
     canvas.clipRect(rect);
     if (circle.hardBorder) {
       _drawFill(canvas);
-      if (circle.borderWidth > 0.0) {
+      if (circle.borderWidth > 0) {
         final borderPaint = Paint()
           ..style = PaintingStyle.stroke
           ..color = circle.borderColor
@@ -114,10 +112,10 @@ class CirclePainter extends CustomPainter {
         canvas.drawCircle(circle.offset, circle.radius, borderPaint);
       }
     } else {
-      if (circle.borderWidth > 0.0) {
+      if (circle.borderWidth > 0) {
         final gradientPaint = Paint()
           ..style = PaintingStyle.fill
-          ..color = circle.color.withOpacity(1.0)
+          ..color = circle.color.withOpacity(1)
           ..shader = Gradient.radial(
             circle.offset,
             circle.radius,
@@ -127,7 +125,7 @@ class CirclePainter extends CustomPainter {
             ],
             <double>[
               circle.radius / (circle.radius + circle.borderWidth),
-              1.0,
+              1,
             ],
           );
         canvas.drawCircle(circle.offset, circle.radius, gradientPaint);

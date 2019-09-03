@@ -8,10 +8,12 @@ import '../services/auth.dart';
 import '../services/prefs.dart';
 import 'circle_layer.dart';
 
+const List<String> _kDefParams = ['0.0', '0.0', '0.0'];
+
 class LiveMap extends StatefulWidget {
-  LiveMap({
+  const LiveMap({
     Key key,
-    this.zoom: 17.0,
+    this.zoom: 17,
     this.onInteract,
   }) : super(key: key);
 
@@ -25,10 +27,10 @@ class LiveMap extends StatefulWidget {
 
 class _LiveMapState extends State<LiveMap> {
   final MapController _mapController = MapController();
-  LatLng _latLng = LatLng(0.0, 0.0);
+  LatLng _latLng = LatLng(0, 0);
   List<Group> _groups;
   List<dynamic> _selectedGroups;
-  double _accuracy = 0.0;
+  double _accuracy = 0;
 
   void _parse(List<String> data) {
     _latLng = LatLng(double.tryParse(data[0]), double.tryParse(data[1]));
@@ -36,112 +38,82 @@ class _LiveMapState extends State<LiveMap> {
   }
 
   double _metersToPixels(double meters, double latitude, double zoom) {
-    return meters *
-        256.0 /
-        (math.cos(degToRadian(latitude)) *
-            (EARTH_RADIUS * 2 * PI) /
-            math.pow(2, zoom));
+    return meters * 256 / (math.cos(degToRadian(latitude)) * (EARTH_RADIUS * 2 * PI) / math.pow(2, zoom));
   }
 
   @override
   Widget build(BuildContext context) {
     _groups = AuthModel.of(context, aspect: 'groups');
-    _selectedGroups = PrefsModel.of(
-      context,
-      aspect: 'Groups',
-      defaultValue: [],
-    );
+    _selectedGroups = PrefsModel.of(context, aspect: 'Groups', defaultValue: []);
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    _parse(
-      List.castFrom(
-        PrefsModel.of(
-          context,
-          aspect: 'lastLoc',
-          defaultValue: ['0.0', '0.0', '0.0'],
-        ),
-      ),
-    );
+    _parse(List.castFrom(PrefsModel.of(context, aspect: 'lastLoc', defaultValue: _kDefParams)));
     if (_mapController.ready) _mapController.move(_latLng, widget.zoom);
     return Stack(
       children: <Widget>[
         FlutterMap(
-          options: MapOptions(
-            center: _latLng,
-            zoom: widget.zoom,
-            plugins: [
-              BorderCircleLayerPlugin(),
-            ],
-          ),
+          options: MapOptions(center: _latLng, zoom: widget.zoom, plugins: [BorderCircleLayerPlugin()]),
           layers: <LayerOptions>[
             TileLayerOptions(
-              urlTemplate: "https://api.mapbox.com/v4/"
-                  "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
-              backgroundColor: isDark ? Color(0xff111111) : Color(0xffeeeeee),
+              urlTemplate: "https://api.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+              backgroundColor: isDark ? const Color(0xff111111) : const Color(0xffeeeeee),
               additionalOptions: {
-                'accessToken':
-                    'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
+                'accessToken': 'pk.eyJ1IjoiZXZvbGl0aXN0IiwiYSI6ImNqbWFkNTZnczA4enQzcm55djgzajdmd2UifQ.ZBP52x4Ed3tEbgODEMWE_w',
                 'id': 'mapbox.${isDark ? 'dark' : 'light'}',
               },
             ),
             BorderCircleLayerOptions(
-              circles: _groups.map((group) {
-                bool selected = _selectedGroups.contains(group.uid);
-                return BorderCircleMarker(
-                  point: group.location,
-                  radius: _metersToPixels(100.0, group.location.latitude,
-                      _mapController.ready ? _mapController.zoom : widget.zoom),
-                  color: Colors.orange.withAlpha(selected ? 63 : 31),
-                  hardBorder: selected,
-                  borderWidth: selected ? 4.0 : 16.0,
-                  borderColor: Colors.orange,
-                );
-              }).toList()
-                ..add(
-                  BorderCircleMarker(
-                    point: _latLng,
-                    radius: _metersToPixels(
-                        _accuracy,
-                        _latLng.latitude,
-                        _mapController.ready
-                            ? _mapController.zoom
-                            : widget.zoom),
-                    color: Colors.blue.withAlpha(31),
-                    hardBorder: true,
-                    borderWidth: 1.0,
-                    borderColor: Colors.blue.withAlpha(127),
+              circles: [
+                ..._groups.map((group) {
+                  bool selected = _selectedGroups.contains(group.uid);
+                  return BorderCircleMarker(
+                    point: group.location,
+                    radius: _metersToPixels(100, group.location.latitude,
+                        _mapController.ready ? _mapController.zoom : widget.zoom),
+                    color: Colors.orange.withAlpha(selected ? 63 : 31),
+                    hardBorder: selected,
+                    borderWidth: selected ? 4 : 16,
+                    borderColor: Colors.orange,
+                  );
+                }),
+                BorderCircleMarker(
+                  point: _latLng,
+                  radius: _metersToPixels(
+                      _accuracy,
+                      _latLng.latitude,
+                      _mapController.ready
+                          ? _mapController.zoom
+                          : widget.zoom,
                   ),
+                  color: Colors.blue.withAlpha(31),
+                  hardBorder: true,
+                  borderWidth: 1,
+                  borderColor: Colors.blue.withAlpha(127),
                 ),
+              ],
             ),
             MarkerLayerOptions(
-              markers: _groups.map((group) {
-                return Marker(
-                  point: group.location,
-                  builder: (ctx) => Center(
-                        child: Text(
-                          group.name,
-                        ),
-                      ),
-                  width: 128.0,
-                  height: 128.0,
-                  anchorPos: AnchorPos.align(AnchorAlign.center),
-                );
-              }).toList(),
+              markers: [
+                for (Group group in _groups)
+                  Marker(
+                    point: group.location,
+                    builder: (ctx) => Center(child: Text(group.name)),
+                    width: 128,
+                    height: 128,
+                    anchorPos: AnchorPos.align(AnchorAlign.center),
+                  ),
+              ],
             ),
             MarkerLayerOptions(
               markers: <Marker>[
                 Marker(
                   point: _latLng,
-                  builder: (context) {
-                    return Material(
-                      elevation: 4.0,
-                      shape: CircleBorder(
-                        side: BorderSide(color: Colors.white),
-                      ),
-                      color: Colors.blue,
-                    );
-                  },
-                  width: 16.0,
-                  height: 16.0,
+                  builder: (_) => Material(
+                    elevation: 4,
+                    shape: const CircleBorder(side: BorderSide(color: Colors.white)),
+                    color: Colors.blue,
+                  ),
+                  width: 16,
+                  height: 16,
                   anchorPos: AnchorPos.align(AnchorAlign.center),
                 ),
               ],
@@ -159,9 +131,9 @@ class _LiveMapState extends State<LiveMap> {
 }
 
 class SelectorMap extends StatefulWidget {
-  SelectorMap({
+  const SelectorMap({
     Key key,
-    this.zoom: 17.0,
+    this.zoom: 17,
     this.decoration,
     this.focusNode,
     this.onInteract,
@@ -181,7 +153,7 @@ class SelectorMap extends StatefulWidget {
 
 class _SelectorMapState extends State<SelectorMap> {
   final MapController _mapController = MapController();
-  LatLng _latLng = LatLng(0.0, 0.0);
+  LatLng _latLng = LatLng(0, 0);
 
   FocusNode _focusNode;
 
@@ -211,18 +183,10 @@ class _SelectorMapState extends State<SelectorMap> {
   @override
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
-    _parse(
-      List.castFrom(
-        PrefsModel.of(
-          context,
-          aspect: 'lastLoc',
-          defaultValue: ['0.0', '0.0', '0.0'],
-        ),
-      ),
-    );
+    _parse(List.castFrom(PrefsModel.of(context, aspect: 'lastLoc', defaultValue: _kDefParams)));
     Widget result = CustomPaint(
       foregroundPainter: _ReticlePainter(
-        strokeWidth: 1.0,
+        strokeWidth: 1,
         color: isDark ? Colors.white : Colors.black,
         opacity: 0.9,
       ),
@@ -254,17 +218,13 @@ class _SelectorMapState extends State<SelectorMap> {
             markers: <Marker>[
               Marker(
                 point: _latLng,
-                builder: (context) {
-                  return Material(
-                    elevation: 4.0,
-                    shape: CircleBorder(
-                      side: BorderSide(color: Colors.white),
-                    ),
-                    color: Colors.blue,
-                  );
-                },
-                width: 16.0,
-                height: 16.0,
+                builder: (ctx) => const Material(
+                  elevation: 4,
+                  shape: CircleBorder(side: BorderSide(color: Colors.white)),
+                  color: Colors.blue,
+                ),
+                width: 16,
+                height: 16,
                 anchorPos: AnchorPos.align(AnchorAlign.center),
               ),
             ],
@@ -276,12 +236,11 @@ class _SelectorMapState extends State<SelectorMap> {
     if (widget.decoration != null) {
       LatLng loc = _mapController.ready ? _mapController.center.round() : null;
       result = Padding(
-        padding: EdgeInsets.only(bottom: 24.0),
+        padding: EdgeInsets.only(bottom: 24),
         child: InputDecorator(
           isFocused: _effectiveFocusNode.hasFocus,
           decoration: widget.decoration.copyWith(
-            counterText:
-                loc != null ? '${loc.latitude}, ${loc.longitude}' : null,
+            counterText: loc != null ? '${loc.latitude}, ${loc.longitude}' : null,
           ),
           child: result,
         ),
@@ -306,7 +265,7 @@ class _SelectorMapState extends State<SelectorMap> {
 
 class _ReticlePainter extends CustomPainter {
   _ReticlePainter({
-    this.strokeWidth: 8.0,
+    this.strokeWidth: 8,
     this.color: Colors.black,
     this.opacity: 0.5,
   }) : assert(strokeWidth != null) {
@@ -326,33 +285,12 @@ class _ReticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Rect.fromLTWH(
-        0.0,
-        size.height / 2.0 - strokeWidth / 2.0,
-        size.width,
-        strokeWidth,
-      ),
-      _paint,
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(
-        size.width / 2.0 - strokeWidth / 2.0,
-        0.0,
-        strokeWidth,
-        size.height / 2.0 - strokeWidth / 2.0,
-      ),
-      _paint,
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(
-        size.width / 2.0 - strokeWidth / 2.0,
-        size.height / 2.0 + strokeWidth / 2.0,
-        strokeWidth,
-        size.height / 2.0 - strokeWidth / 2.0,
-      ),
-      _paint,
-    );
+    final double hw = size.width / 2;
+    final double hh = size.height / 2;
+    final double hs = strokeWidth / 2;
+    canvas.drawRect(Rect.fromLTWH(0, hh - hw, size.width, strokeWidth), _paint);
+    canvas.drawRect(Rect.fromLTWH(hw - hs, 0, strokeWidth, hh - hs), _paint);
+    canvas.drawRect(Rect.fromLTWH(hw - hs, hh + hs, strokeWidth, hh - hs), _paint);
   }
 
   @override

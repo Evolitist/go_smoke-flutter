@@ -28,7 +28,7 @@ class _SliverEEContainerState extends State<SliverEEContainer>
     _eeController = AnimationController(
       vsync: this,
     )..addListener(() {
-        if (_eeController.value == 1.0) _eeController.value = 0.0;
+        if (_eeController.value == 1) _eeController.value = 0;
         setState(() {});
       });
   }
@@ -40,9 +40,9 @@ class _SliverEEContainerState extends State<SliverEEContainer>
     double refreshTriggerPullDistance,
     double refreshIndicatorExtent,
   ) {
-    Curve rotation = Interval(0.1, 0.7, curve: Curves.easeInOut);
-    Curve opacityIn = Interval(0.0, 0.1, curve: Curves.easeInOut);
-    Curve opacityOut = Interval(0.9, 1.0, curve: Curves.easeInOut);
+    Curve rotation = const Interval(0.1, 0.7, curve: Curves.easeInOut);
+    Curve opacityIn = const Interval(0, 0.1, curve: Curves.easeInOut);
+    Curve opacityOut = const Interval(0.9, 1, curve: Curves.easeInOut);
     return Align(
       alignment: Alignment.bottomCenter,
       child: refreshState != RefreshIndicatorMode.armed &&
@@ -51,7 +51,7 @@ class _SliverEEContainerState extends State<SliverEEContainer>
           : Opacity(
               opacity: min(
                 opacityIn.transform(_eeController.value),
-                1.0 - opacityOut.transform(_eeController.value),
+                1 - opacityOut.transform(_eeController.value),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -62,30 +62,20 @@ class _SliverEEContainerState extends State<SliverEEContainer>
                     child: Stack(
                       children: <Widget>[
                         Opacity(
-                          opacity:
-                              1.0 - rotation.transform(_eeController.value),
-                          child: Icon(Icons.close),
+                          opacity: 1 - rotation.transform(_eeController.value),
+                          child: const Icon(Icons.close),
                         ),
                         Opacity(
                           opacity: rotation.transform(_eeController.value),
-                          child: Icon(Icons.check),
+                          child: const Icon(Icons.check),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(width: 8.0),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        'Well, you found me.',
-                        style: Theme.of(context).textTheme.overline,
-                      ),
-                      Text(
-                        'What\'s next?',
-                        style: Theme.of(context).textTheme.overline,
-                      ),
-                    ],
+                  const SizedBox(width: 8.0),
+                  Text(
+                    'Well, you found me.\nWhat\'s next?',
+                    style: Theme.of(context).textTheme.overline,
                   ),
                 ],
               ),
@@ -100,8 +90,7 @@ class _SliverEEContainerState extends State<SliverEEContainer>
       child: CustomScrollView(
         slivers: <Widget>[
           CupertinoSliverRefreshControl(
-            refreshTriggerPullDistance:
-                MediaQuery.of(context).size.height * 0.1,
+            refreshTriggerPullDistance: MediaQuery.of(context).size.height * 0.1,
             refreshIndicatorExtent: 24.0,
             builder: _buildEE,
             onRefresh: () {

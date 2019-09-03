@@ -12,6 +12,8 @@ import '../widgets/backdrop.dart';
 import '../widgets/map.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({Key key}) : super(key: key);
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -44,13 +46,12 @@ class _HomePageState extends State<HomePage> {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-                  title: Text('Permissions error'),
-                  content:
-                      Text('Location permission is reqired for app to work.'),
-                  actions: <Widget>[
-                    FlatButton(onPressed: () => SystemNavigator.pop(), child: Text('OK')),
-                  ],
-                ),
+              title: const Text('Permissions error'),
+              content: const Text('Location permission is reqired for app to work.'),
+              actions: <Widget>[
+                FlatButton(onPressed: () => SystemNavigator.pop(), child: const Text('OK')),
+              ],
+            ),
           );
         }
       });
@@ -66,20 +67,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Backdrop(
-      frontLayer: LiveMap(),
+      frontLayer: const LiveMap(),
       backLayer: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          ChoiceChipBlock(
+          /*ChoiceChipBlock(
             //TODO: decide if we want chips or something else for this control
             labelText: 'Cigarettes',
             selected: 1,
             names: <String>['none', '1', '2+'],
           ),
-          Container(
-            height: 16.0,
-          ),
+          const SizedBox(height: 16.0),*/
           StatefulBuilder(
             builder: (ctx, setBlockState) {
               _groups = AuthModel.of(ctx, aspect: 'groups');
@@ -105,27 +104,18 @@ class _HomePageState extends State<HomePage> {
           await showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
-                  title: Text('Data to be sent'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        'senderId: ${AuthModel.of(context, aspect: 'user').uid}',
-                        textAlign: TextAlign.center,
-                      ),
-                      Text(
-                        'groups: $_g',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  actions: <Widget>[
-                    FlatButton(
-                      child: Text('OK'),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
+              title: const Text('Data to be sent'),
+              content: Text(
+                'senderId: ${AuthModel.of(context, aspect: 'user').uid}\ngroups: $_g',
+                textAlign: TextAlign.center,
+              ),
+              actions: <Widget>[
+                FlatButton(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.of(ctx).pop(),
                 ),
+              ],
+            ),
           );
           /*CloudFunctions.instance.getHttpsCallable(functionName: 'performPrimaryAction').call({
             'senderId': AuthModel.of(context, aspect: 'user').uid,
@@ -143,10 +133,35 @@ class _HomePageState extends State<HomePage> {
           });*/
         },
         tooltip: 'GO',
-        child: Icon(Icons.smoking_rooms),
+        child: const Icon(Icons.smoking_rooms),
       ),
-      settingsClick: () => Navigator.pushNamed(context, '/settings'),
-      accountClick: () => Navigator.pushNamed(context, '/profile'),
+      actions: <Widget>[
+        IconButton(
+          icon: const Icon(Icons.person),
+          onPressed: () => Navigator.pushNamed(context, '/profile'),
+        ),
+        Builder(
+          builder: (ctx) {
+            bool dark = PrefsModel.of(ctx, aspect: 'isDark', defaultValue: false);
+            return AnimatedCrossFade(
+              firstChild: IconButton(
+                icon: const Icon(Icons.brightness_3),
+                onPressed: () => PrefsManager.of(ctx).set('isDark', false),
+              ),
+              secondChild: IconButton(
+                icon: const Icon(Icons.brightness_7),
+                onPressed: () => PrefsManager.of(ctx).set('isDark', true),
+              ),
+              crossFadeState: dark ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              duration: kThemeChangeDuration,
+            );
+          },
+        ),
+        /*IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () => Navigator.pushNamed(context, '/settings'),
+        ),*/
+      ],
     );
   }
 }

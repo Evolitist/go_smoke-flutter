@@ -13,7 +13,7 @@ class UserAvatar extends StatefulWidget {
 
   const UserAvatar({
     Key key,
-    this.radius: 24.0,
+    this.radius: 24,
     this.photoUrl,
     this.displayName,
     this.inProgress: false,
@@ -29,15 +29,15 @@ class _UserAvatarState extends State<UserAvatar>
     with SingleTickerProviderStateMixin {
   String _lastUrl;
   AnimationController _controller;
-  Tween<double> _photoScale = Tween(begin: 0.0, end: 1.0);
+  Tween<double> _photoScale = Tween(begin: 0, end: 1);
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      upperBound: 1.0,
-      lowerBound: 0.0,
-      value: 1.0,
+      upperBound: 1,
+      lowerBound: 0,
+      value: 1,
       duration: widget.duration,
       vsync: this,
     );
@@ -47,19 +47,19 @@ class _UserAvatarState extends State<UserAvatar>
   void didUpdateWidget(UserAvatar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.inProgress && !oldWidget.inProgress) {
-      _controller.animateTo(0.0, curve: widget.curve);
+      _controller.animateTo(0, curve: widget.curve);
     } else if (!widget.inProgress && oldWidget.inProgress) {
       setState(() {
         _lastUrl = widget.photoUrl;
       });
-      _controller.animateTo(1.0, curve: widget.curve);
+      _controller.animateTo(1, curve: widget.curve);
     } else if (widget.photoUrl != oldWidget.photoUrl) {
       _controller.animateTo(0.5, curve: widget.curve).whenComplete(() {
         setState(() {
           _lastUrl = widget.photoUrl;
         });
-        Future.delayed(Duration(milliseconds: 100), () {
-          _controller.animateTo(1.0, curve: widget.curve);
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _controller.animateTo(1, curve: widget.curve);
         });
       });
     }
@@ -74,12 +74,11 @@ class _UserAvatarState extends State<UserAvatar>
           scale: _photoScale.animate(
             CurvedAnimation(
               parent: _controller.view,
-              curve: Interval(0.5, 1.0),
+              curve: Interval(0.5, 1),
             ),
           ),
           child: CircleAvatar(
-            backgroundImage:
-                _lastUrl == null ? null : CachedNetworkImageProvider(_lastUrl),
+            backgroundImage: _lastUrl == null ? null : CachedNetworkImageProvider(_lastUrl),
             child: _lastUrl == null
                 ? Icon(
                     Icons.person_outline,
@@ -95,11 +94,11 @@ class _UserAvatarState extends State<UserAvatar>
             ReverseAnimation(
               CurvedAnimation(
                 parent: _controller.view,
-                curve: Interval(0.0, 0.5),
+                curve: Interval(0, 0.5),
               ),
             ),
           ),
-          child: CircularProgressIndicator(),
+          child: const CircularProgressIndicator(),
         ),
       ],
     );

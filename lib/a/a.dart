@@ -28,13 +28,13 @@ class _UserAvatarState extends State<UserAvatar>
   void initState() {
     super.initState();
     _eeController = AnimationController(
-      lowerBound: -100.0,
-      value: 0.0,
-      upperBound: 100.0,
+      lowerBound: -100,
+      value: 0,
+      upperBound: 100,
       animationBehavior: AnimationBehavior.preserve,
       vsync: this,
     )..addListener(() {
-        if (_eeController.value.abs() == 100.0) {
+        if (_eeController.value.abs() == 100) {
           _checkEE(_eeVertical, _eeController.value);
         }
         setState(() {});
@@ -43,12 +43,12 @@ class _UserAvatarState extends State<UserAvatar>
 
   void _checkEE(bool a, double d) {
     if (_eeCounter >= _code.length) return;
-    _eeController.value = 0.0;
+    _eeController.value = 0;
     int state = ((a ? 1 : 0) << 1) | (d > 0 ? 1 : 0);
     if (state == _code[_eeCounter]) {
       _eeCounter++;
       if (_eeCounter == _code.length) {
-        _eeController.fling(velocity: -1.0);
+        _eeController.fling(velocity: -1);
         setState(() {});
       }
     } else {
@@ -61,57 +61,49 @@ class _UserAvatarState extends State<UserAvatar>
     return Stack(
       children: <Widget>[
         Transform(
-          transform:
-              Matrix4.rotationX(_eeVertical ? _eeController.value * pi : 0.0),
+          transform: Matrix4.rotationX(_eeVertical ? _eeController.value * pi : 0),
           alignment: Alignment.center,
           child: Transform(
-            transform:
-                Matrix4.rotationY(_eeVertical ? 0.0 : _eeController.value * pi),
+            transform: Matrix4.rotationY(_eeVertical ? 0 : _eeController.value * pi),
             alignment: Alignment.center,
             child: CircleAvatar(
-              radius: 48.0,
-              backgroundImage:
-                  CachedNetworkImageProvider(widget.photoUrl ?? ''),
+              radius: 48,
+              backgroundImage: CachedNetworkImageProvider(widget.photoUrl ?? ''),
             ),
           ),
         ),
         Transform(
           transform: Matrix4.rotationY(_eeCounter >= _code.length
               ? (-_eeController.value - 99.5).clamp(0, 0.5) * pi + pi * 1.5
-              : pi / 2.0),
+              : pi / 2),
           alignment: Alignment.center,
           child: Material(
             shape: CircleBorder(),
             color: Colors.black.withOpacity(0.5),
             child: SizedBox(
-              width: 96.0,
-              height: 96.0,
+              width: 96,
+              height: 96,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
                   Material(
-                    shape: CircleBorder(),
+                    shape: const CircleBorder(),
                     clipBehavior: Clip.hardEdge,
                     elevation: 4.0,
                     child: Container(
-                      width: 32.0,
-                      height: 32.0,
+                      width: 32,
+                      height: 32,
                       alignment: Alignment.center,
                       child: InkResponse(
                         child: Text('A'),
-                        radius: 16.0,
+                        radius: 16,
                         onTap: () {
                           if (_eeCounter == _code.length) {
                             setState(() {
                               _eeCounter++;
                             });
                           } else {
-                            _eeController
-                                .animateTo(
-                              0.0,
-                              duration: Duration(milliseconds: 300),
-                            )
-                                .whenComplete(() {
+                            _eeController.animateTo(0, duration: const Duration(milliseconds: 300)).whenComplete(() {
                               setState(() {
                                 _eeCounter = 0;
                               });
@@ -121,28 +113,23 @@ class _UserAvatarState extends State<UserAvatar>
                       ),
                     ),
                   ),
-                  VerticalDivider(width: 0.0),
+                  const VerticalDivider(width: 0),
                   Material(
-                    shape: CircleBorder(),
+                    shape: const CircleBorder(),
                     clipBehavior: Clip.hardEdge,
-                    elevation: 4.0,
+                    elevation: 4,
                     child: Container(
-                      width: 32.0,
-                      height: 32.0,
+                      width: 32,
+                      height: 32,
                       alignment: Alignment.center,
                       child: InkResponse(
-                        child: Text('B'),
-                        radius: 16.0,
+                        child: const Text('B'),
+                        radius: 16,
                         onTap: () {
                           if (_eeCounter == _code.length + 1) {
                             //TODO: handle successful activation
                           }
-                          _eeController
-                              .animateTo(
-                            0.0,
-                            duration: Duration(milliseconds: 300),
-                          )
-                              .whenComplete(() {
+                          _eeController.animateTo(0, duration: const Duration(milliseconds: 300)).whenComplete(() {
                             setState(() {
                               _eeCounter = 0;
                             });
@@ -158,22 +145,18 @@ class _UserAvatarState extends State<UserAvatar>
         ),
         Positioned.fill(
           child: GestureDetector(
-            behavior: _eeCounter >= _code.length
-                ? HitTestBehavior.translucent
-                : HitTestBehavior.opaque,
+            behavior: _eeCounter >= _code.length ? HitTestBehavior.translucent : HitTestBehavior.opaque,
             onHorizontalDragEnd: (details) {
               setState(() {
                 _eeVertical = false;
               });
-              _eeController.fling(
-                  velocity: 0.001 * details.velocity.pixelsPerSecond.dx.sign);
+              _eeController.fling(velocity: 0.001 * details.velocity.pixelsPerSecond.dx.sign);
             },
             onVerticalDragEnd: (details) {
               setState(() {
                 _eeVertical = true;
               });
-              _eeController.fling(
-                  velocity: 0.001 * details.velocity.pixelsPerSecond.dy.sign);
+              _eeController.fling(velocity: 0.001 * details.velocity.pixelsPerSecond.dy.sign);
             },
           ),
         ),

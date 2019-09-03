@@ -27,69 +27,48 @@ class _ProfilePageState extends State<ProfilePage> {
           iconTheme: Theme.of(context).iconTheme,
           textTheme: Theme.of(context).textTheme,
           forceElevated: isScrolled,
-          expandedHeight: signedIn ? 176.0 : null,
+          expandedHeight: signedIn ? 176 : null,
           flexibleSpace: FlexibleSpaceBar(
             background: SafeArea(
               child: Column(
                 children: <Widget>[
-                  SizedBox(
-                    height: 16.0,
-                  ),
+                  const SizedBox(height: 16),
                   UserAvatar(photoUrl: _currentUser?.photoUrl ?? ''),
                 ],
               ),
             ),
-            title: Row(
-              mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Expanded(child: Container()),
-                Text(
-                  _currentUser?.displayName ??
-                      _currentUser?.phoneNumber ??
-                      'Welcome',
-                  style: Theme.of(context).textTheme.title,
-                ),
-                Expanded(
-                  child: Container(
-                    alignment: Alignment.bottomLeft,
-                    padding: EdgeInsets.fromLTRB(8.0, 0.0, 0.0, 1.0),
-                    child: signedIn
-                        ? InkResponse(
-                            onTap: () {
-                              _authManager.editProfile(context);
-                            },
-                            highlightColor: Colors.transparent,
-                            child: Padding(
-                              padding: EdgeInsets.all(1.0),
-                              child: Icon(
-                                Icons.edit,
-                                size: 18.0,
-                                color: Theme.of(context).iconTheme.color,
-                              ),
-                            ),
-                            radius: 16.0,
-                          )
-                        : null,
-                  ),
-                ),
-              ],
+            title: RichText(
+              text: TextSpan(
+                text: _currentUser?.displayName ?? _currentUser?.phoneNumber ?? 'Welcome',
+                style: Theme.of(context).textTheme.title,
+                children: [
+                  if (signedIn)
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: InkResponse(
+                        onTap: () => _authManager.editProfile(context),
+                        highlightColor: Colors.transparent,
+                        child: const Padding(
+                          padding: EdgeInsets.only(left: 6, top: 1, right: 1, bottom: 1),
+                          child: Icon(Icons.edit, size: 18),
+                        ),
+                        radius: 16,
+                      ),
+                    ),
+                ],
+              ),
             ),
             centerTitle: true,
           ),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.exit_to_app),
-              onPressed: signedIn
-                  ? () {
-                      _authManager.signOut();
-                    }
-                  : null,
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: signedIn ? () => _authManager.signOut() : null,
             ),
           ],
-          bottom: PreferredSize(
-            child: Divider(height: 0.0),
-            preferredSize: Size.fromHeight(1.0),
+          bottom: const PreferredSize(
+            child: Divider(height: 0),
+            preferredSize: Size.fromHeight(1),
           ),
           pinned: true,
         ),
@@ -100,22 +79,16 @@ class _ProfilePageState extends State<ProfilePage> {
   ListTile _createGroupTile(BuildContext ctx, Group group) {
     bool admin = group.creator == _currentUser.uid;
     return ListTile(
-      leading: admin ? Icon(Icons.star) : Icon(Icons.person),
+      leading: admin ? const Icon(Icons.star) : const Icon(Icons.group),
       title: Text(group.name),
       trailing: PopupMenuButton(
-        itemBuilder: (ctx) {
-          if (admin) {
-            return <PopupMenuEntry>[
+        itemBuilder: (ctx) => admin ? const <PopupMenuEntry>[
               PopupMenuItem(child: Text('Invite'), value: 0),
               PopupMenuDivider(),
               PopupMenuItem(child: Text('Delete'), value: 1),
-            ];
-          } else {
-            return <PopupMenuEntry>[
+            ] : const <PopupMenuEntry>[
               PopupMenuItem(child: Text('Leave'), value: 2),
-            ];
-          }
-        },
+            ],
         onSelected: (i) {
           switch (i) {
             case 0:
@@ -130,36 +103,36 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         },
       ),
-      onTap: () {
-        showDialog(
-          context: ctx,
-          builder: (ctx) {
-            return AlertDialog(
-              title: Text('Members'),
-              content: FutureBuilder<QuerySnapshot>(
-                future: Firestore.instance.collection('users').where('groups', arrayContains: group.uid).getDocuments(),
-                builder: (ctx, snap) {
-                  if (snap.hasData) {
-                    return Container(
-                      height: 100,
-                      width: 100,
-                      child: ListView(
-                        children: <Widget>[
-                          for (var s in snap.data.documents)
-                            ListTile(
-                              title: Text(s.documentID),
-                            ),
-                        ],
-                      ),
-                    );
-                  }
-                  return Container();
-                },
-              ),
-            );
-          },
-        );
-      },
+      onTap: () => showDialog(
+        context: ctx,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('Members'),
+            content: FutureBuilder<QuerySnapshot>(
+              future: Firestore.instance.collection('users').where('groups', arrayContains: group.uid).getDocuments(),
+              builder: (ctx, snap) {
+                if (snap.hasData) {
+                  return SizedBox(
+                    height: 100,
+                    width: 100,
+                    child: ListView(
+                      children: <Widget>[
+                        for (var s in snap.data.documents)
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: group.creator == s.documentID ? const Icon(Icons.star) : null,
+                            title: Text(s.documentID),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox();
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -167,24 +140,23 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     _authManager = AuthManager.of(context);
     _currentUser = AuthModel.of(context, aspect: 'user');
-    _groups = List.castFrom(AuthModel.of(context, aspect: 'groups'));
+    _groups = List.from(AuthModel.of(context, aspect: 'groups'));
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: _buildHeader,
         body: signedIn
             ? PageView(
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 controller: _pager,
                 children: [
                   Builder(
                     builder: (ctx) {
                       return ScrollConfiguration(
-                        behavior: ScrollBehavior(),
+                        behavior: const ScrollBehavior(),
                         child: CustomScrollView(
                           slivers: <Widget>[
                             SliverOverlapInjector(
-                              handle: NestedScrollView
-                                  .sliverOverlapAbsorberHandleFor(ctx),
+                              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(ctx),
                             ),
                             SliverList(
                               delegate: SliverChildBuilderDelegate(
@@ -197,28 +169,28 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
-                  Container(),
+                  const SizedBox(),
                 ],
               )
             : Column(
                 children: <Widget>[
-                  Spacer(),
+                  const Spacer(),
                   _GoogleLoginButton(authManager: _authManager),
-                  SizedBox(
-                    height: 16.0,
+                  const SizedBox(
+                    height: 16,
                     child: FractionallySizedBox(
                       widthFactor: 0.4,
                       child: Divider(),
                     ),
                   ),
                   _PhoneLoginButton(authManager: _authManager),
-                  Spacer(),
+                  const Spacer(),
                 ],
               ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentPage,
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.group),
             title: Text('Groups'),
@@ -234,7 +206,7 @@ class _ProfilePageState extends State<ProfilePage> {
           });
           _pager.animateToPage(
             _currentPage,
-            duration: Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
           );
         },
@@ -242,10 +214,8 @@ class _ProfilePageState extends State<ProfilePage> {
       floatingActionButton: _currentPage == 0
           ? FloatingActionButton(
               heroTag: null,
-              child: Icon(Icons.add),
-              onPressed: () {
-                _authManager.createGroup(context);
-              },
+              child: const Icon(Icons.add),
+              onPressed: () => _authManager.createGroup(context),
             )
           : null,
     );
@@ -267,26 +237,20 @@ class _GoogleLoginButton extends StatefulWidget {
 class _GoogleLoginButtonState extends State<_GoogleLoginButton> {
   @override
   Widget build(BuildContext context) {
-    bool inProgress =
-        AuthModel.of(context, aspect: 'authState') == AuthState.inProgress;
-    bool correct =
-        AuthModel.of(context, aspect: 'authProvider') == AuthProvider.google;
+    bool inProgress = AuthModel.of(context, aspect: 'authState') == AuthState.inProgress;
+    bool correct = AuthModel.of(context, aspect: 'authProvider') == AuthProvider.google;
     return RaisedButton.icon(
-      icon: Icon(Icons.cloud),
+      icon: const Icon(Icons.cloud),
       label: correct
           ? SizedBox(
               width: Theme.of(context).buttonTheme.height - 24.0,
               height: Theme.of(context).buttonTheme.height - 24.0,
               child: CircularProgressIndicator(strokeWidth: 2.0),
             )
-          : Text('Sign in with Google'),
+          : const Text('Sign in with Google'),
       color: Colors.grey[50],
       textColor: Colors.black.withOpacity(0.54),
-      onPressed: inProgress
-          ? null
-          : () {
-              widget.authManager.googleSignIn();
-            },
+      onPressed: inProgress ? null : () => widget.authManager.googleSignIn(),
     );
   }
 }
@@ -306,32 +270,25 @@ class _PhoneLoginButton extends StatefulWidget {
 class _PhoneLoginButtonState extends State<_PhoneLoginButton> {
   @override
   Widget build(BuildContext context) {
-    bool inProgress =
-        AuthModel.of(context, aspect: 'authState') == AuthState.inProgress;
-    bool correct =
-        AuthModel.of(context, aspect: 'authProvider') == AuthProvider.phone;
+    bool inProgress = AuthModel.of(context, aspect: 'authState') == AuthState.inProgress;
+    bool correct = AuthModel.of(context, aspect: 'authProvider') == AuthProvider.phone;
     return RaisedButton.icon(
-      icon: Icon(Icons.smartphone),
+      icon: const Icon(Icons.smartphone),
       label: correct
           ? SizedBox(
               width: Theme.of(context).buttonTheme.height - 24.0,
               height: Theme.of(context).buttonTheme.height - 24.0,
               child: CircularProgressIndicator(strokeWidth: 2.0),
             )
-          : Text('Sign in with phone'),
-      onPressed: inProgress
-          ? null
-          : () {
-              widget.authManager.phoneSignIn(context);
-            },
+          : const Text('Sign in with phone'),
+      onPressed: inProgress ? null : () => widget.authManager.phoneSignIn(context),
     );
   }
 }
 
 class NoOverscrollBehavior extends ScrollBehavior {
   @override
-  Widget buildViewportChrome(
-      BuildContext context, Widget child, AxisDirection axisDirection) {
+  Widget buildViewportChrome(BuildContext context, Widget child, AxisDirection axisDirection) {
     return child;
   }
 }
