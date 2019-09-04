@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../groups/chips.dart';
 import '../olc.dart' as olc;
@@ -117,7 +118,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           );
-          /*CloudFunctions.instance.getHttpsCallable(functionName: 'performPrimaryAction').call({
+          CloudFunctions.instance.getHttpsCallable(functionName: 'performPrimaryAction').call({
             'senderId': AuthModel.of(context, aspect: 'user').uid,
             'groups': _g,
             'senderLat': _lat,
@@ -130,7 +131,7 @@ class _HomePageState extends State<HomePage> {
               print(e.message);
               print(e.details);
             }
-          });*/
+          });
         },
         tooltip: 'GO',
         child: const Icon(Icons.smoking_rooms),
