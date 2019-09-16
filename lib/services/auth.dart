@@ -92,12 +92,11 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
   }
 
   Future checkGroups() async {
-    List<Group> groups = [];
     if (_user == null) return;
-    DocumentSnapshot doc =
-        await _db.collection('users').document(_user.uid).get();
+    List<Group> groups = [];
+    DocumentSnapshot doc = await _db.collection('users').document(_user.uid).get();
     if (doc.exists) {
-      List<DocumentReference> newGroups = List<String>.from(doc.data['groups']).map((s) => _db.collection('groups').document(s)).toList(growable: true);
+      List<DocumentReference> newGroups = List<String>.from(doc.data['groups']).map((s) => _db.collection('groups').document(s)).toList();
       for (var doc in newGroups) {
         DocumentSnapshot gDoc = await doc.get();
         groups.add(Group(
@@ -125,7 +124,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
       });
     }
     setState(() {
-      this._groups = groups;
+      _groups = groups;
     });
   }
 
@@ -142,42 +141,38 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
     //TODO: limit group creations per user
     DocumentReference groupRef = _db.collection('groups').document()
       ..setData({'name': name, 'location': location, 'creator': _user.uid});
-    List<Group> groups = List.of(this._groups)
-      ..add(Group.raw(groupRef.documentID, name, location, _user.uid));
+    List<Group> groups = List.of(_groups)..add(Group.raw(groupRef.documentID, name, location, _user.uid));
     await _db
         .collection('users')
         .document(_user.uid)
         .setData({'groups': _groupsToRefs(groups)});
     setState(() {
-      this._groups = groups;
+      _groups = groups;
     });
   }
 
   Future _deleteGroup({@required Group group}) async {
     DocumentReference groupRef = _db.collection('groups').document(group.uid);
     await groupRef.delete();
-    List<Group> groups = List.of(this._groups)..remove(group);
+    List<Group> groups = List.of(_groups)..remove(group);
     QuerySnapshot snap = await _db
         .collection('users')
         .where('groups', arrayContains: groupRef)
         .getDocuments();
-    snap.documents.forEach((doc) {
-      doc.reference.setData(doc.data
-        ..update('groups', (list) {
-          List<DocumentReference> old = List.castFrom(list);
-          return List.of(old)..remove(groupRef);
-        }));
-    });
+    for(DocumentSnapshot doc in snap.documents) {
+      doc.reference.setData(doc.data..update('groups', (list) {
+        List<DocumentReference> old = List.from(list);
+        return List.of(old)..remove(groupRef);
+      }));
+    }
     setState(() {
-      this._groups = groups;
+      _groups = groups;
     });
   }
 
   Future signOut() async {
-    DocumentSnapshot doc =
-        await _db.collection('users').document(_user.uid).get();
-    Map<String, dynamic> devices = Map.from(doc.data['devices'])
-      ..remove(_deviceId);
+    DocumentSnapshot doc = await _db.collection('users').document(_user.uid).get();
+    Map<String, dynamic> devices = Map.from(doc.data['devices'])..remove(_deviceId);
     await doc.reference.setData(doc.data..['devices'] = devices);
     await _auth.signOut();
     setState(() {
@@ -188,9 +183,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
   }
 
   Future _updateUserProfile({String displayName}) async {
-    setState(() {
-      _profileState = ProfileState.updating;
-    });
+    setState(() => _profileState = ProfileState.updating);
     UserUpdateInfo updateInfo = UserUpdateInfo();
     updateInfo.displayName = displayName;
     await _user?.updateProfile(updateInfo);
@@ -198,7 +191,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
     _auth.currentUser().then((user) {
       setState(() {
         _profileState = ProfileState.still;
-        this._user = user;
+        _user = user;
       });
     });
   }
@@ -209,8 +202,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
       _authState = AuthState.inProgress;
     });
     FirebaseUser user = await _auth.currentUser();
-    GoogleSignInAccount googleUser =
-        await _googleAuth.signInSilently() ?? await _googleAuth.signIn();
+    GoogleSignInAccount googleUser = await _googleAuth.signInSilently() ?? await _googleAuth.signIn();
     GoogleSignInAuthentication googleAuth = await googleUser.authentication;
     AuthCredential cred = GoogleAuthProvider.getCredential(
       accessToken: googleAuth.accessToken,
@@ -223,7 +215,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
       await user.reload();
     }
     setState(() {
-      this._user = user;
+      _user = user;
       _authState = AuthState.signedIn;
       _authProvider = null;
     });
@@ -308,9 +300,10 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
                         padding: EdgeInsets.only(top: 4.0),
                         child: TextFormField(
                           autofocus: true,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Name',
                             border: OutlineInputBorder(),
+                            alignLabelWithHint: true,
                           ),
                           initialValue: savedName,
                           autovalidate: true,
@@ -320,10 +313,9 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
                           keyboardType: TextInputType.text,
                           autocorrect: false,
                           textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.sentences,
                           focusNode: textInput,
-                          onSaved: (text) {
-                            savedName = text;
-                          },
+                          onSaved: (text) => savedName = text,
                           onFieldSubmitted: (_) {
                             if (Form.of(ctx).validate()) {
                               Form.of(ctx).save();
@@ -436,8 +428,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
     //TODO: allow generating per-user invite links
     var params = DynamicLinkParameters(
       uriPrefix: 'https://gsmk.page.link',
-      link: Uri.parse(
-          'https://evolitist.github.io/gosmoke/join?gid=${group.uid}'),
+      link: Uri.parse('https://evolitist.github.io/gosmoke/join?gid=${group.uid}'),
       androidParameters: AndroidParameters(
         packageName: 'com.evolitist.gosmoke',
       ),
@@ -459,7 +450,7 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
     DocumentSnapshot doc = await groupRef.get();
     if (!doc.exists) return;
     if (doc.data['creator'] == _user.uid) return;
-    List<Group> groups = List.of(this._groups);
+    List<Group> groups = List.of(_groups);
     if (groups.any((g) => g.uid == groupRef.documentID)) return;
     groups.add(Group(
       groupRef.documentID,
@@ -471,20 +462,20 @@ class AuthManagerState extends State<AuthManager> with SingleTickerProviderState
       'groups': _groupsToRefs(groups),
     });
     setState(() {
-      this._groups = groups;
+      _groups = groups;
     });
   }
 
   void leaveGroup(Group group) async {
     if (group == null) return;
-    List<Group> groups = List.of(this._groups);
+    List<Group> groups = List.of(_groups);
     if (!groups.contains(group)) return;
     groups.remove(group);
     await _db.collection('users').document(_user.uid).setData({
       'groups': _groupsToRefs(groups),
     });
     setState(() {
-      this._groups = groups;
+      _groups = groups;
     });
   }
 

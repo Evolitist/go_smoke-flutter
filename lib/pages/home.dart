@@ -118,11 +118,11 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           );
-          CloudFunctions.instance.getHttpsCallable(functionName: 'performPrimaryAction').call({
-            'senderId': AuthModel.of(context, aspect: 'user').uid,
+          CloudFunctions.instance.getHttpsCallable(functionName: 'cg').call({
+            /*'senderId': AuthModel.of(context, aspect: 'user').uid,
             'groups': _g,
             'senderLat': _lat,
-            'senderLng': _lng,
+            'senderLng': _lng,*/
           }).then((result) {
             print(result.data);
           }, onError: (e) {
